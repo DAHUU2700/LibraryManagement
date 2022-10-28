@@ -69,7 +69,7 @@ Front-end and Back-end Separation for library management system.
 
 #### 1.2.2 安装vue/cli
 
-官方文档：[https://cli.vuejs.org/zh/guide/installation.html](https://gitee.com/link?target=https%3A%2F%2Fcli.vuejs.org%2Fzh%2Fguide%2Finstallation.html) 
+官方文档：https://cli.vuejs.org/zh/guide/installation.html
 
 在指定的项目下运行：
 
@@ -181,5 +181,42 @@ added 846 packages in 2m
 
     ![image-20221028152410730](./README/pic/03.png)
 
+### 1.3  使用elementUI
 
+官网：https://element.eleme.cn/
 
+安装 ElementUI：`npm i element-ui -S`
+
+```sh
+H:\GIt-Note\LibraryManagement\vue> npm i element-ui -S
+```
+
+在Vue项目中导入：
+
+```js
+import ElementUI from 'element-ui';
+import 'element-ui/lib/theme-chalk/index.css';
+```
+
+```js
+Vue.use(ElementUI);
+```
+
+### 1.4 在IDEA中启动vue
+
+1. ![image-20221028161539824](./../../Typora/typora-pic/04.png)
+
+2. ![image-20221028161703798](./README/pic/05.png)
+
+3. RUN
+
+```sh
+ DONE  Compiled successfully in 19533ms                         
+
+  App running at:
+  - Local:   http://localhost:8080/
+  - Network: http://192.168.2.18:8080/
+
+  Note that the development build is not optimized.
+  To create a production build, run npm run build.
+```
