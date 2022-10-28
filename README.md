@@ -204,10 +204,8 @@ Vue.use(ElementUI);
 
 ### 1.4 在IDEA中启动vue
 
-1. ![image-20221028161539824](./../../Typora/typora-pic/04.png)
-
+1. ![image-20221028161539824](./README/pic/04.png)
 2. ![image-20221028161703798](./README/pic/05.png)
-
 3. RUN
 
 ```sh
