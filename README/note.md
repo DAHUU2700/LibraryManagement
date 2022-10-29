@@ -551,4 +551,303 @@ org.apache.ibatis.binding.BindingException: Invalid bound statement (not found):
 //绑定异常:无效的绑定语句(未找到)
 ```
 
-# 3、后台增删改查
+# 3、分页&模糊查询
+
+## 3.1 后端
+
+为了统一后台返回的数据，创建`springboot.common`包，新建`Result.java`进行包装。
+
+```java
+package com.example.springboot.common;
+import lombok.Data;
+
+/**
+ * 统一管理后台的返回的数据
+ */
+@Data
+public class Result {
+//    定义常量状态码
+    private static final String SUCCESS_CODE = "200";
+    private static final String ERROR_CODE = "-1";
+
+//    统一封装返回信息
+    private String code;
+    private Object data;
+    private String msg;
+
+//    成功时调用的无参构造方法
+    public static Result success() {
+        Result result = new Result();
+        result.setCode(SUCCESS_CODE);
+        return result;
+    }
+
+//    成功时调用的有参构造方法
+    public static Result success(Object data) {
+        Result result = new Result();
+        result.setCode(SUCCESS_CODE);
+        result.setData(data);
+        return result;
+    }
+
+    //    错误时调用的有参构造方法
+    public static Result error(String msg) {
+        Result result = new Result();
+        result.setCode(ERROR_CODE);
+        result.setMsg(msg);
+        return result;
+    }
+}
+```
+
+修改`UserController`；并且将包下的`listUser`都修改为`list`。
+
+```java
+//  查询所有
+@GetMapping("/list")
+public Result list() {
+    List<User> users = userService.list();
+    return Result.success(users);
+}
+```
+
+启动浏览器，访问`http://localhost:9090/user/list`
+
+<img src="./pic/note-10.png" alt="image-20221029220206314" style="zoom: 67%;" />
+
+==正式开始分页与模糊查询：（从前往后）==
+
+1. 在`controller.UserController`中
+
+   ```java
+   //  分页
+   @GetMapping("/page")
+   public Result page(UserPageRequest userPageRequest) {
+   	return Result.success(userService.page(userPageRequest));
+       }
+   ```
+
+   - 会需要传递参数，创建`controller.request`来创建实体类类`BaseRequest`和`UserPageRequest`；并且UserPageRequest 继承 BaseRequest。
+
+     ```java
+     package com.example.springboot.controller.request;
+     import lombok.Data;
+     
+     @Data
+     public class BaseRequest {
+         //	页数信息（通用的）
+         //	设置默认值，否则报错500，需要手动传入参数
+         private Integer pageNum = 1 ;
+         private Integer pageSize = 10 ;
+     }
+     ```
+
+     ```java
+     package com.example.springboot.controller.request;
+     import lombok.Data;
+     
+     @Data
+     public class UserPageRequest extends BaseRequest{
+     	//	模糊查询的字段
+         private String name;	
+         private String phone;
+     }
+     ```
+
+2. 在`service.IUserService`中
+
+   ```java
+   //  分页
+   Object page(UserPageRequest userPageRequest);
+   ```
+
+   在`service.impl.UserService`中
+
+   ```java
+   //  分页
+   @Override
+   public Object page(UserPageRequest userPageRequest) {
+     
+       // 使用插件将其包装成分页对象
+      PageHelper.startPage(userPageRequest.getPageNum(),userPageRequest.getPageSize());
+       
+       //  条件查询listByCondition
+       List<User> users = userMapper.listByCondition(userPageRequest);
+       return new PageInfo<>(users);
+       
+   }
+   ```
+
+3. 在`mapper.UserMapper`中
+
+   ```java
+   /**
+    * 条件查询
+    * @param userPageRequest
+    */
+   List<User> listByCondition(UserPageRequest userPageRequest);
+   ```
+
+   与`User.xml`保持映射，写入sql语句。
+
+   ```xml
+   <!--  条件查询  -->
+   <select id="listByCondition" resultType="com.example.springboot.entity.User">
+   
+   <!--
+   导致传入的参数为null的原因，sql语句是静态的，应该采用动态sql语句。
+   select * from user where name like concat('%', #{name}, '%') and phone like concat('%', #{phone}, '%');
+   -->
+   
+   -- 动态sql
+   select * from user 
+   	<where>
+   		<if test="name != null and name != ''">
+               name like concat('%',#{name},'%')
+   		</if>
+   		
+           <if test="phone != null and phone != ''">
+               phone like concat('%',#{phone},'%')
+   		</if>
+   	</where>
+   </select>
+   ```
+
+   > 如果使用静态sql，会导致传入的参数为null。
+   >
+   > ```sh
+   > JDBC Connection [HikariProxyConnection@1851731810 wrapping com.mysql.cj.jdbc.ConnectionImpl@5bc3ea85] will not be managed by Spring
+   > ==>  Preparing: select * from user where name like concat('%', ?, '%') and phone like concat('%', ?, '%');
+   > ==> Parameters: null, null
+   > <==      Total: 0
+   > ```
+   >
+   > 动态sql语句的日志信息：
+   >
+   > ```sh
+   > ==>  Preparing: select * from user where name like concat('%', ?, '%') 
+   > ==> Parameters: 李四(String)
+   > <==      Total: 0
+   > ```
+   >
+   > 动态sql 的好处：**传什么查什么**
+
+### 3.1.1 pagehelper 分页对象
+
+在`service.impl.UserService`中，为了包装分页对象；导入依赖pagehelper。
+
+```xml
+<!--    pagehelper    -->
+        <dependency>
+            <groupId>com.github.pagehelper</groupId>
+            <artifactId>pagehelper-spring-boot-starter</artifactId>
+            <version>1.4.5</version>
+        </dependency>
+```
+
+在启动srpingboot时pagehelper成功生效会有提示：
+
+```sh
+
+,------.                           ,--.  ,--.         ,--.                         
+|  .--. '  ,--,--.  ,---.   ,---.  |  '--'  |  ,---.  |  |  ,---.   ,---.  ,--.--. 
+|  '--' | ' ,-.  | | .-. | | .-. : |  .--.  | | .-. : |  | | .-. | | .-. : |  .--' 
+|  | --'  \ '-'  | ' '-' ' \   --. |  |  |  | \   --. |  | | '-' ' \   --. |  |    
+`--'       `--`--' .`-  /   `----' `--'  `--'  `----' `--' |  |-'   `----' `--'    
+                   `---'                                   `--'                        
+is intercepting.
+```
+
+### 3.1.2 设置日志
+
+```properties
+# 配置Mybatis 绑定
+mybatis:
+  mapper-locations: classpath:com/example/springboot/mapper/*.xml
+  # 打印日志
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+```
+
+## 3.2 前端
+
+之前使用`fetch()`去实现的，需要自己去拼接地址，比较麻烦。因此使用`axios`插件，来处理前后端交互的数据。
+
+### 3.2.1 axios的安装
+
+不知道是什么bug、在Terminal终端进入项目的vue目录后，执行安装语句，会报错；经过解决后使用`cmd（管理员）`完成插件的安装。
+
+- 通过cmd，进入到项目中`vue`目录（其实和终端一样）
+
+  ```sh
+  C:\Windows\system32>cd H:\GIt-Note\LibraryManagement\vue
+  C:\Windows\system32>H:
+  H:\GIt-Note\LibraryManagement\vue> 
+  ```
+
+- 清除npm缓存：
+
+  ```sh
+  npm cache clean --force
+  ```
+
+- 安装：
+
+  ```sh
+  npm install axios -S
+  ```
+
+- 安装成功后，在`vue\package.json`中会添加`axios`依赖：
+
+  ```json
+  "dependencies": {
+  	"axios": "^1.1.3",
+      "core-js": "^3.8.3",
+      "element-ui": "^2.15.10",
+      "vue": "^2.6.14",
+      "vue-router": "^3.5.1"
+  }
+  ```
+
+- axios封装`request.js`：在vue目录下新建文件。
+
+  ```js
+  import axios from 'axios'
+  
+  const request = axios.create({
+      baseURL: '/api',  
+      timeout: 5000
+  })
+  
+  // request 拦截器
+  // 可以自请求发送前对请求做一些处理
+  // 比如统一加token，对请求参数统一加密
+  request.interceptors.request.use(config => {
+      config.headers['Content-Type'] = 'application/json;charset=utf-8';
+  
+      // config.headers['token'] = user.token;  // 设置请求头
+      return config
+  }, error => {
+      return Promise.reject(error)
+  });
+  
+  // response 拦截器
+  // 可以在接口响应后统一处理结果
+  request.interceptors.response.use(
+      response => {
+          let res = response.data;
+          // 兼容服务端返回的字符串数据
+          if (typeof res === 'string') {
+              res = res ? JSON.parse(res) : res
+          }
+          return res;
+      },
+      error => {
+          console.log('err' + error) // for debug
+          return Promise.reject(error)
+      }
+  )
+  export default request
+  ```
+
+04_视频_31min 开始笔记
