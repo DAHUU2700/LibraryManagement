@@ -2,9 +2,10 @@
   <div>
     <!--    搜索表单    -->
       <div style="margin-bottom: 20px">
-        <el-input style="width: 240px" placeholder="请输入名称"></el-input>
-        <el-input style="width: 240px; margin: 5px" placeholder="请输入联系方式"></el-input>
-        <el-button style="margin-left: 5px" type="primary"><i class="el-icon-search"></i>搜索</el-button>
+        <el-input style="width: 240px" placeholder="请输入名称" v-model="params.name"></el-input>
+        <el-input style="width: 240px; margin: 5px" placeholder="请输入联系方式" v-model="params.phone" ></el-input>
+        <el-button style="margin-left: 5px" type="primary" @click="load"><i class="el-icon-search"></i>搜索</el-button>
+        <el-button style="margin-left: 5px" type="warning" @click="reset"><i class="el-icon-refresh"></i>重置</el-button>
       </div>
 
     <!--  表头  -->
@@ -20,8 +21,11 @@
     <div style="margin-top: 20px">
       <el-pagination
           background
-          layout="prev, pager, next"
-          :total="100">
+          :current-page = "params.pageNum"
+          :page-size = "params.pagesize"
+          layout = "prev, pager, next"
+          @current.change = "handleCurrentChange"
+          :total=total>
       </el-pagination>
     </div>
 
@@ -30,11 +34,20 @@
 
 <script>
 
+import request from "@/utils/request";
+
 export default {
   name: 'HomeView',
   data(){
     return {
-      tableData: []
+      tableData: [],
+      total:0,
+      params: {
+        pageNum: 1,
+        pagesize: 10,
+        name: '',
+        phone: ''
+      }
     }
   },
   created() {
@@ -42,13 +55,32 @@ export default {
   },
   methods:{
     load() {
-      fetch('http://localhost:9090/user/list')
-          .then(res => res.json())
+      request.get(
+          '/user/page',
+          {params:this.params})
           .then(res => {
-            console.log(res)
-            this.tableData = res
-          })
+            if(res.code === '200'){
+              this.tableData = res.data.list
+              this.total = res.data.total
+            }
+          }
+      )
+    },
+    reset() {
+      this.params = {
+        pageNum: 1,
+        pagesize: 10,
+        name: '',
+        phone: ''
+      }
+      this.load()
+    },
+    handleCurrentChange(pageNum) {
+      // 点击触发分页
+      this.params.pageNum = pageNum
+      this.load()
     }
+
   }
 }
 </script>

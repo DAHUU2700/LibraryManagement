@@ -9,6 +9,9 @@ spring:
     username: root
     password: 123456
 
-#配置Mybatis 绑定
+# 配置Mybatis 绑定
 mybatis:
   mapper-locations: classpath:com/example/springboot/mapper/*.xml
+  # 打印日志
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

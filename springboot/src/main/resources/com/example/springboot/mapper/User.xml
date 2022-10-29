@@ -4,9 +4,29 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.springboot.mapper.UserMapper">
 
-<!--  查询所有  -->
-    <select id="listUser" resultType="com.example.springboot.entity.User">
+    <!--  查询所有  -->
+    <select id="list" resultType="com.example.springboot.entity.User">
+        select * from user;
+    </select>
+    <!--  条件查询  -->
+    <select id="listByCondition" resultType="com.example.springboot.entity.User">
+
+    <!--
+        导致传入的参数为null的原因，sql语句是静态的，应该采用动态sql语句。
+        select * from user where name like concat('%', #{name}, '%') and phone like concat('%', #{phone}, '%');
+    -->
+
+    -- 动态sql
         select * from user
+            <where>
+                <if test="name != null and name != ''">
+                    name like concat('%',#{name},'%')
+                </if>
+
+                <if test="phone != null and phone != ''">
+                    phone like concat('%',#{phone},'%')
+                </if>
+            </where>
     </select>
 
 </mapper>
