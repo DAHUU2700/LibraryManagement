@@ -2,13 +2,15 @@
 
 Front-end and Back-end Separation for library management system.
 
-## 1. 准备阶段
+## 1.、准备阶段
 
 ### 1.1 准备知识
 
 - JavaSE、servlet、JDBC、Maven、Mybatis、SpringMVC、SSM（了解）、Springboot；
 - MySQL数据库简单的SQL语法；
 - 前端页面：HTML、CSS、JS、vue2相关语法。
+
+相关软件：IDEA、nodejs、jdk、mysql5.7\8.0、navicat
 
 ### 1.2 Vue安装及环境配置
 
@@ -218,3 +220,7 @@ Vue.use(ElementUI);
   Note that the development build is not optimized.
   To create a production build, run npm run build.
 ```
+
+## 2、实操阶段
+
+ [note.md](README\note.md) 
