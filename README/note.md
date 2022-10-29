@@ -234,7 +234,7 @@ DEFAULT CHARACTER SET utf8mb4
 DEFAULT COLLATE utf8mb4_unicode_ci;
 ```
 
-<img src="./../../../Typora/typora-pic/note-05.png" alt="image-20221029152047245" style="zoom: 67%;" />
+<img src="./pic/note-05.png" alt="image-20221029152047245" style="zoom: 67%;" />
 
 ② 创建表
 
