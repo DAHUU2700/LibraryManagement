@@ -551,7 +551,7 @@ org.apache.ibatis.binding.BindingException: Invalid bound statement (not found):
 //绑定异常:无效的绑定语句(未找到)
 ```
 
-# 3、分页&模糊查询
+# 3、分页&模糊查询(R)
 
 ## 3.1 后端
 
@@ -738,7 +738,22 @@ public Result list() {
 
 <img src="./pic/note-11.png" alt="image-20221030101432742" style="zoom:50%;" />
 
+分页成功的提示：
 
+```sh
+JDBC Connection [HikariProxyConnection@695994014 wrapping com.mysql.cj.jdbc.ConnectionImpl@cdd60cf] will not be managed by Spring
+==>  Preparing: SELECT count(0) FROM user
+==> Parameters: 
+<==    Columns: count(0)
+<==        Row: 1
+<==      Total: 1
+==>  Preparing: -- 动态sql select * from user LIMIT ?
+==> Parameters: 10(Integer)
+<==    Columns: id, name, username, age, sex, phone, address
+<==        Row: 1, 张三, zhangsan, 18, 男, 19111966688, 家里
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@1cbbcb99]
+```
 
 ### 3.1.2 pagehelper 分页对象
 
@@ -999,5 +1014,626 @@ export default {
    </div>
    ```
 
-# 4、
+# 4、后台增删改(CDU)
 
+调整前端页面；新建`views\user\User.vue`，将之前的HomeView.vue移植过来。
+
+```vue
+<template>
+  <div>
+    <!--    搜索表单    -->
+    <div style="margin-bottom: 20px">
+      <el-input style="width: 240px" placeholder="请输入姓名" v-model="params.name"></el-input>
+      <el-input style="width: 240px; margin: 5px" placeholder="请输入联系方式" v-model="params.phone" ></el-input>
+      <el-button style="margin-left: 5px" type="primary" @click="load"><i class="el-icon-search"></i>搜索</el-button>
+      <el-button style="margin-left: 5px" type="warning" @click="reset"><i class="el-icon-refresh"></i>重置</el-button>
+    </div>
+
+    <!--  表头  -->
+    <el-table :data="tableData" stripe>
+      <el-table-column prop="id" label="编号"></el-table-column>
+      <el-table-column prop="name" label="姓名"></el-table-column>
+      <el-table-column prop="age" label="年龄"></el-table-column>
+      <el-table-column prop="phone" label="联系方式"></el-table-column>
+      <el-table-column prop="sex" label="性别"></el-table-column>
+      <el-table-column prop="address" label="地址"></el-table-column>
+      <el-table-column prop="createtime" label="创建时间"></el-table-column>
+      <el-table-column prop="updatetime" label="更新时间"></el-table-column>
+
+      <!--   操作（编辑&删除）   -->
+      <el-table-column label="操作">
+        <template v-slot="scope">
+        <!--     scope.row 就是当前行数据     -->
+          <el-button type="primary" @click="$router.push('/editUser?id=' + scope.row.id)">编辑</el-button>
+          <el-popconfirm
+              style="margin-left: 8px"
+              title="您确定删除吗？"
+              @confirm = "del(scope.row.id)">
+            <el-button type="danger" slot="reference">删除</el-button>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- 分页 -->
+    <div style="margin-top: 20px">
+      <el-pagination
+          background
+          :current-page="params.pageNum"
+          :page-size="params.pagesize"
+          layout="prev, pager, next"
+          @current-change="handleCurrentChange"
+          :total=total>
+      </el-pagination>
+    </div>
+
+  </div>
+</template>
+
+<script>
+
+//  导入request包，类似于导入axios.js
+import request from "@/utils/request";
+
+export default {
+  name: 'User',
+    //	此处保持一致
+  data(){
+    return {
+      tableData: [],
+      //  绑定total，默认为0
+      total:0,
+      //  传入参数
+      params: {
+        pageNum: 1,
+        pagesize: 10,
+        name: '',
+        phone: ''
+      }
+    }
+  },
+  created() {
+    this.load()
+  },
+  methods:{
+    //  加载
+    load() {
+      request.get(
+          '/user/page',
+          //  传递参数
+          {params:this.params})
+          .then(res => {
+                //  进行判断200再赋值
+                if(res.code === '200'){
+                  //  data.list 才是数据库中的数据
+                  this.tableData = res.data.list
+                  //  绑定total
+                  this.total = res.data.total
+                }
+              }
+          )
+    },
+    //  重置按钮功能
+    reset() {
+      this.params = {
+        pageNum: 1,
+        pagesize: 10,
+        name: '',
+        phone: ''
+      }
+      this.load()
+    },
+    //  点击触发分页效果
+    handleCurrentChange(pageNum) {
+      this.params.pageNum = pageNum
+      this.load()
+      // console.log(pageNum)
+    },
+    //  删除按钮功能
+    del(id) {
+      request.delete("user/delete/" + id).then(res => {
+        if(res.code === '200') {
+          this.$notify.success('删除成功')
+          this.load()
+        } else {
+          this.$notify.error(res.msg)
+        }
+          })
+    }
+
+  }
+}
+</script>
+<style scoped>
+</style>
+```
+
+1. 表头新增`id`(编号)、`createtime`(创建时间)、`updatetime`(更新时间)；
+2. 新增==操作==（编辑和删除按钮）；
+3. 当实现删除按钮时，使用`methods:{}`中的`del()`方法。
+
+在`index.js`中添加路由：
+
+```js
+  {
+    path: '/user',
+    name: 'User',
+    component: () => import('@/views/user/User')
+  },
+```
+
+在`App.vue`中对侧边导航进行微调：
+
+```vue
+<!--    侧边栏导航    -->
+      <div style="width: 200px;
+      min-height: calc(100vh - 82px);
+      /*最小行高 100vh占满全屏，82px = 头部height80px + margin-bottom 2px */
+      overflow: hidden;
+      margin-right: 2px;
+      background-color: white">
+      <el-menu
+          :default-active="$route.path === '/'? $route.path : $route.path.substring(1)"
+          :default-openeds="['/']"
+          router class="el-menu-demo">
+
+        <el-menu-item index="/">
+          <i class="el-icon-s-platform"></i>
+          <span>首页</span>
+        </el-menu-item>
+
+
+        <el-submenu index="/">
+          <template slot="title">
+            <i class="el-icon-more"></i>
+            <span>会员管理</span>
+          </template>
+          <el-menu-item index="addUser">添加会员</el-menu-item>
+          <el-menu-item index="user">会员列表</el-menu-item>
+          </el-submenu>
+
+        <el-menu-item index="3" disabled>消息中心</el-menu-item>
+      </el-menu>
+      </div>
+```
+
+## 4.1 添加
+
+### 4.1.1 前端
+
+在`index.js`中添加`addUser`路由：
+
+```js
+  {
+    path: '/addUser',
+    name: 'addUser',
+    component: () => import('@/views/user/addUser')
+  },
+```
+
+新建`user\addUser.vue`页面：
+
+```vue
+<template>
+    <!-- 新增表单 -->
+  <div style="margin: 20px;width: 300px">
+    <h2 style="margin-bottom: 30px">新增用户</h2>
+  <el-form label-width="80px" ref="form" :model="form">
+    <el-form-item label="姓名" prop="name">
+      <el-input v-model="form.name" placeholder="请输入姓名"></el-input>
+    </el-form-item>
+    <el-form-item label="年龄" prop="age">
+      <el-input v-model="form.age" placeholder="请输入年龄"></el-input>
+    </el-form-item>
+    <el-form-item label="联系方式" prop="phone">
+      <el-input v-model="form.phone" placeholder="请输入联系方式"></el-input>
+    </el-form-item>
+    <el-form-item label="性别" prop="sex">
+      <el-input v-model="form.sex" placeholder="请输入性别"></el-input>
+    </el-form-item>
+    <el-form-item label="地址" prop="address">
+      <el-input v-model="form.address" placeholder="请输入姓名"></el-input>
+    </el-form-item>
+  </el-form>
+
+      <!--  按钮  -->
+    <div style="text-align: center;margin-top: 30px">
+      <el-button type="primary" @click="sava">提交</el-button>
+    </div>
+
+  </div>
+</template>
+
+<script>
+
+//	导入request
+import request from "@/utils/request";
+
+export default {
+  name: "addUser",
+  data() {
+    return {
+      form: {}
+    }
+  },
+  methods: {
+    //  新增表单（关联后端）
+    sava() {
+      request.post('/user/sava', this.form).then(
+          res => {
+            if (res.code === '200') {
+              this.$notify.success('新增成功')
+              this.form = {}
+            } else {
+              this.$notify.error(res.msg)
+            }
+          })
+    },
+
+  }
+}
+</script>
+<style scoped>
+</style>
+```
+
+### 4.1.2 后端
+
+1. `controller`，通过post请求；
+
+   ```java
+   //  添加
+   @PostMapping("/sava")   
+   //这里不加/sava，也可以直接通过"/"访问
+   public Result save(@RequestBody User user) {
+   	userService.sava(user);
+   	return Result.success();
+   }
+   ```
+
+2. `service`包下
+
+   在`IUserService`中
+
+   ```java
+       //  添加
+       void sava(User user);
+   ```
+
+   在`UserService`中，通过导入依赖实现`username`成为唯一的号码——`hutool`
+
+   ```java
+   //  添加
+   @Override
+   public void sava(User user) {
+   	Date date = new Date();
+       //  生成卡号
+       user.setUsername(DateUtil.format(date,"yyyMMdd") + IdUtil.simpleUUID());
+           userMapper.sava(user);
+       }
+   ```
+
+   - `pom.xml`添加依赖
+
+     ```xml
+     <!--    UID-hutool    -->
+     	<dependency>
+     		<groupId>cn.hutool</groupId>
+     		<artifactId>hutool-all</artifactId>
+     		<version>5.8.0</version>
+     	</dependency>
+     ```
+
+3. `UserMapper`中
+
+   ```java
+       /**
+        * 添加
+        * @param user
+        */
+       void sava(User user);
+   ```
+
+   `User.xml`中
+
+   ```xml
+   <!--  添加  -->
+   <insert id="sava">
+           insert into user(name,username,age,sex,phone,address)
+           values (#{name},#{username},#{age},#{sex},#{phone},#{address})
+    </insert>
+   ```
+
+### 4.1.3 SQL表
+
+新增两个属性`reatetime`和`updatetime`；设置`reatetime`特性为`CURRENT_TIMESTAMP`，字段默认值为当前时间。
+
+![image-20221030172828383](./../../../Typora/typora-pic/image-20221030172828383.png)
+
+添加新属性后，实体类`entity\User`中的代码页需要添加：
+
+```java
+@JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
+private Date createtime;
+@JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
+private Date updatetime;
+```
+
+## 4.2 更新
+
+### 4.2.1 前端
+
+在`index.js`中添加`editUser`路由：
+
+```js
+  {
+    path: '/editUser',
+    name: 'editUser',
+    component: () => import('@/views/user/editUser')
+  }
+```
+
+创建`editUser.vue`，类似于添加页面，基本相同。
+
+```vue
+<template>
+  <div style="margin: 20px;width: 300px">
+    <h2 style="margin-bottom: 30px">编辑用户</h2>
+  <el-form label-width="80px" ref="form" :model="form">
+    <el-form-item label="姓名" prop="name">
+      <el-input v-model="form.name" placeholder="请输入姓名"></el-input>
+    </el-form-item>
+    <el-form-item label="年龄" prop="age">
+      <el-input v-model="form.age" placeholder="请输入年龄"></el-input>
+    </el-form-item>
+    <el-form-item label="联系方式" prop="phone">
+      <el-input v-model="form.phone" placeholder="请输入联系方式"></el-input>
+    </el-form-item>
+    <el-form-item label="性别" prop="sex">
+      <el-input v-model="form.sex" placeholder="请输入性别"></el-input>
+    </el-form-item>
+    <el-form-item label="地址" prop="address">
+      <el-input v-model="form.address" placeholder="请输入姓名"></el-input>
+    </el-form-item>
+  </el-form>
+
+      <!--  按钮  -->
+    <div style="text-align: center;margin-top: 30px">
+      <el-button type="primary" @click="update">提交</el-button>
+<!--      <el-button type="warning" @click="resetForm">重置</el-button>-->
+    </div>
+
+  </div>
+</template>
+
+<script>
+
+import request from "@/utils/request";
+
+export default {
+  name: "addUser",
+  data() {
+    return {
+      form: {}
+    }
+  },
+    //	根据id查询的页面
+  created() {
+    const id = this.$route.query.id
+    request.get("/user/" + id).then(res => {
+      this.form = res.data
+    })
+  },
+  methods: {
+    //  更新
+    update() {
+      request.put('/user/update', this.form).then(
+          res => {
+            if (res.code === '200') {
+              this.$notify.success('更新成功')
+              this.$router.push("/user")
+            } else {
+              this.$notify.error(res.msg)
+            }
+          })
+    },
+  }
+}
+</script>
+<style scoped>
+</style>
+```
+
+### 4.2.2 后端
+
+方便写笔记，根据==id查询==与更新写在一起。
+
+1. `controller`包
+
+   ```java
+       //  修改（根据id查询）
+       @GetMapping("/{id}")
+       public Result getById(@PathVariable Integer id) {
+           User user = userService.getById(id);
+           return Result.success(user);
+       }
+   
+       //  更新
+       @PutMapping("/update")
+       public Result update(@RequestBody User user) {
+           userService.update(user);
+           return Result.success();
+       }
+   ```
+
+2. `service`包下
+
+   在`IUserService`中：
+
+   ```java
+       //  修改（根据id查询）
+       User getById(Integer id);
+   
+       //  更新
+       void update(User user);
+   ```
+
+   在`UserService`中：
+
+   ```java
+       //  修改（根据id查询）
+       @Override
+       public User getById(Integer id) {
+           return userMapper.getById(id);
+       }
+   
+       //  更新
+       @Override
+       public void update(User user) {
+           user.setUpdatetime(new Date());
+           userMapper.updateById(user);
+       }
+   ```
+
+3. `UserMapper`中
+
+   ```java
+       /**
+        * 根据id查询
+        * @param id
+        * @return
+        */
+       User getById(Integer id);
+   
+       /**
+        * 更新
+        * @param user
+        */
+       void updateById(User user);
+   ```
+
+   `User.xml`中
+
+   ```xml
+       <!--  修改（根据id查询）  -->
+       <select id="getById" resultType="com.example.springboot.entity.User">
+           select * from user where id = #{id}
+       </select>
+   
+       <!--  更新  -->
+       <update id="updateById">
+           update user set name = #{name},age = #{age},sex = #{sex},phone = #{phone}, address = #{address}, updatetime = #{updatetime}
+           where id = #{id}
+       </update>
+   ```
+
+## 4.3 删除
+
+### 4.3.1 前端
+
+因为删除在操作中，位于`User.vue`中：
+
+- 实现删除按钮：
+
+```vue
+      <!--   操作（编辑&删除）   -->
+      <el-table-column label="操作">
+        <template v-slot="scope">
+        <!--     scope.row 就是当前行数据     -->
+          <el-button type="primary" @click="$router.push('/editUser?id=' + scope.row.id)">编辑</el-button>
+          <el-popconfirm
+              style="margin-left: 8px"
+              title="您确定删除吗？"
+              @confirm = "del(scope.row.id)">
+            <el-button type="danger" slot="reference">删除</el-button>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
+```
+
+- 关联后端：
+
+```javascript
+    //  删除按钮功能
+    del(id) {
+      request.delete("user/delete/" + id).then(res => {
+        if(res.code === '200') {
+          this.$notify.success('删除成功')
+          this.load()
+        } else {
+          this.$notify.error(res.msg)
+        }
+          })
+    }
+```
+
+### 4.3.2 后端
+
+1. `controller`包，删除和更新相同，根据id进行删除。
+
+   ```java
+       //  删除
+       @DeleteMapping("/delete/{id}")
+       public Result delete(@PathVariable Integer id) {
+           userService.deleteById(id);
+           return Result.success();
+       }
+   ```
+
+2. `service`包下
+
+   在`IUserService`中：
+
+   ```java
+   	//  删除
+       void deleteById(Integer id);
+   ```
+
+   在`UserService`中：
+
+   ```java
+       //  删除
+       @Override
+       public void deleteById(Integer id) {
+           userMapper.deleteById(id);
+       }
+   ```
+
+3. `UserMapper`中
+
+   ```java
+       /**
+        * 删除
+        * @param id
+        */
+       void deleteById(Integer id);
+   ```
+
+   `User.xml`中
+
+   ```xml
+       <!--  删除  -->
+       <delete id="deleteById">
+           delete from user where id = #{id}
+       </delete>
+   ```
+
+## 4.4 小结
+
+```java
+//	增
+@PostMapping
+
+//	删
+@DeleteMapping
+
+//	改
+@PutMapping
+
+//	查
+@GetMapping
+```
+
+==_**400就是前端的问题，500就是后端的问题**_==
+
+# 5、表单验证
