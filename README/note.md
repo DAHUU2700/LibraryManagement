@@ -555,6 +555,8 @@ org.apache.ibatis.binding.BindingException: Invalid bound statement (not found):
 
 ## 3.1 后端
 
+### 3.1.1 代码实现
+
 为了统一后台返回的数据，创建`springboot.common`包，新建`Result.java`进行包装。
 
 ```java
@@ -732,7 +734,13 @@ public Result list() {
    >
    > 动态sql 的好处：**传什么查什么**
 
-### 3.1.1 pagehelper 分页对象
+访问`http://localhost:9090/user/page`，后端功能已实现。
+
+<img src="./pic/note-11.png" alt="image-20221030101432742" style="zoom:50%;" />
+
+
+
+### 3.1.2 pagehelper 分页对象
 
 在`service.impl.UserService`中，为了包装分页对象；导入依赖pagehelper。
 
@@ -758,7 +766,7 @@ public Result list() {
 is intercepting.
 ```
 
-### 3.1.2 设置日志
+### 3.1.3 设置日志
 
 ```properties
 # 配置Mybatis 绑定
@@ -809,13 +817,14 @@ mybatis:
   }
   ```
 
-- axios封装`request.js`：在vue目录下新建文件。
+- axios封装`request.js`工具类：新建`vue\src\utils`目录。
 
   ```js
   import axios from 'axios'
   
   const request = axios.create({
-      baseURL: '/api',  
+      //	设置url
+      baseURL: 'http://localhost:9090',  
       timeout: 5000
   })
   
@@ -836,7 +845,7 @@ mybatis:
   request.interceptors.response.use(
       response => {
           let res = response.data;
-          // 兼容服务端返回的字符串数据
+          // 兼容服务端返回的字符串数据;res中存放的是code,data,msg
           if (typeof res === 'string') {
               res = res ? JSON.parse(res) : res
           }
@@ -850,4 +859,145 @@ mybatis:
   export default request
   ```
 
-04_视频_31min 开始笔记
+### 3.2.2 代码实现
+
+需要对`HomeView.vue`进行增修，以完善功能。
+
+```vue
+<template>
+  <div>
+    <!--    搜索表单    -->
+      <div style="margin-bottom: 20px">
+        <el-input style="width: 240px" placeholder="请输入名称" v-model="params.name"></el-input>
+        <el-input style="width: 240px; margin: 5px" placeholder="请输入联系方式" v-model="params.phone" ></el-input>
+        <el-button style="margin-left: 5px" type="primary" @click="load"><i class="el-icon-search"></i>搜索</el-button>
+        <el-button style="margin-left: 5px" type="warning" @click="reset"><i class="el-icon-refresh"></i>重置</el-button>
+      </div>
+
+    <!--  表头  -->
+      <el-table :data="tableData" stripe>
+        <el-table-column prop="name" label="名称"></el-table-column>
+        <el-table-column prop="age" label="年龄"></el-table-column>
+        <el-table-column prop="address" label="地址"></el-table-column>
+        <el-table-column prop="phone" label="联系方式"></el-table-column>
+        <el-table-column prop="sex" label="性别"></el-table-column>
+      </el-table>
+
+    <!-- 分页 -->
+    <div style="margin-top: 20px">
+      <el-pagination
+          background
+          :current-page="params.pageNum"
+          :page-size="params.pagesize"
+          layout="prev, pager, next"
+          @current-change="handleCurrentChange"
+          :total=total>
+      </el-pagination>
+    </div>
+
+  </div>
+</template>
+
+<script>
+
+//  导入request包，类似于导入axios.js
+import request from "@/utils/request";
+
+export default {
+  name: 'HomeView',
+  data(){
+    return {
+      tableData: [],
+      //  绑定total，默认为0
+      total:0,
+      //  传入参数
+      params: {
+        pageNum: 1,
+        pagesize: 10,
+        name: '',
+        phone: ''
+      }
+    }
+  },
+  created() {
+    this.load()
+  },
+  methods:{
+    //  加载
+    load() {
+      request.get(
+          '/user/page',
+          //  传递参数
+          {params:this.params})
+          .then(res => {
+            //  进行判断200再赋值
+            if(res.code === '200'){
+              //  data.list 才是数据库中的数据
+              this.tableData = res.data.list
+              //  绑定total
+              this.total = res.data.total
+            }
+          }
+      )
+    },
+    //  重置按钮功能
+    reset() {
+      this.params = {
+        pageNum: 1,
+        pagesize: 10,
+        name: '',
+        phone: ''
+      }
+      this.load()
+    },
+    //  点击触发分页效果
+    handleCurrentChange(pageNum) {
+      this.params.pageNum = pageNum
+      this.load()
+    }
+
+  }
+}
+</script>
+```
+
+注意点：
+
+1. 搜索表单中：
+
+   ```html
+   <!--    搜索表单    -->
+   <div style="margin-bottom: 20px">
+   	<el-input style="width: 240px" placeholder="请输入名称" v-model="params.name"></el-input>
+       -- 需要绑定参数v-model，才能输入！
+   	<el-input style="width: 240px; margin: 5px" placeholder="请输入联系方式" v-model="params.phone" ></el-input>
+       -- 同上
+       
+   	<el-button style="margin-left: 5px" type="primary" @click="load"><i class="el-icon-search"></i>搜索</el-button>
+       -- 当点击搜索时，无反应，需要查看是否绑定【事件@click】
+       
+   <el-button style="margin-left: 5px" type="warning" @click="reset"><i class="el-icon-refresh"></i>重置</el-button>
+       
+   </div>
+   ```
+
+2. 分页中：
+
+   ```html
+   <!-- 分页 -->
+   <div style="margin-top: 20px">
+   	<el-pagination>
+   		background
+           <!--  分页相关的参数pageNum、pagesize -->
+   		:current-page="params.pageNum"
+   		:page-size="params.pagesize"
+   		layout="prev, pager, next"
+           <!-- currentPage 改变时会触发 -->
+   		@current-change="handleCurrentChange"
+   		:total=total>
+   	</el-pagination>
+   </div>
+   ```
+
+# 4、
+
