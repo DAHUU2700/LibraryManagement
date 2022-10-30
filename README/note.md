@@ -1307,8 +1307,8 @@ export default {
    @Override
    public void sava(User user) {
    	Date date = new Date();
-       //  生成卡号
-       user.setUsername(DateUtil.format(date,"yyyMMdd") + IdUtil.simpleUUID());
+           //  生成卡号（当前时间 + 随机6位数字）
+           user.setUsername(DateUtil.format(date,"yyyMMdd") + RandomUtil.randomNumbers(6));
            userMapper.sava(user);
        }
    ```
@@ -1636,4 +1636,155 @@ export default {
 
 ==_**400就是前端的问题，500就是后端的问题**_==
 
-# 5、表单验证
+# 5、表单校验
+
+为了贴合实际，将会对表单数据进行验证，对代码进行优化。（包括：新增用户时对年龄进行判断、联系方式手机号的规定、性别采用单选框）
+
+[https://element.eleme.cn/#/zh-CN/component/form](表单验证)
+
+- 在`editUser`中，表头添加会员卡号`username`，并且设置为不可修改。
+
+  ```vue
+  <el-form-item label="会员卡号" prop="name">
+  	<el-input v-model="form.username" disabled></el-input>
+  </el-form-item>
+  ```
+
+  <img src="./pic/note-12.png" alt="image-20221030212035255" style="zoom:50%;" />
+
+- 修改性别`sex`为单选框，并且设置_男_为默认选中。
+
+  ```vue
+  <el-form-item label="性别" prop="sex">
+  	<el-radio v-model="form.sex" aria-checked="男">男</el-radio>
+  	<el-radio v-model="form.sex" label="女">女</el-radio>
+  </el-form-item>
+  ```
+
+  `aria-checked="男"`相当于`label="男"`吧，后者存在，前者不生效。`addUser`和`editUser`类似相同修改。
+
+- 在`addUser`中，进行表单验证：
+
+  >Form 组件提供了表单验证的功能，只需要通过 `rules` 属性传入约定的验证规则，并将 Form-Item 的 `prop` 属性设置为需校验的字段名即可。
+
+1. 姓名验证：
+
+   ```vue
+   <el-form-item label="姓名" prop="name">
+   	<el-input v-model="form.name" placeholder="请输入姓名"></el-input>
+   </el-form-item>
+   ```
+
+   ```javascript
+   data() {
+       return {
+         form: {},
+   
+         rules: {
+   //	此处的name和prop设置的属性对应
+           name: [
+             { required: true, message: '请输入姓名', trigger: 'blur' },
+           ]
+           //age : [{...}]       
+         },
+   
+         ruleForm: {
+           name: ''
+         },
+       }
+     },
+   ```
+
+2. 年龄验证：
+
+   ```vue
+   <el-form-item label="年龄" prop="age">
+   	<el-input v-model="form.age" placeholder="请输入年龄"></el-input>
+   </el-form-item>
+   ```
+
+   ```javascript
+   data {
+   	//  验证年龄数据
+       const checkAge = (rule,value,callback) => {
+         if (!value) {
+           return callback(new Error('年龄不能为空'));
+         }
+         if (!/^[0-9]+$/.test(value)) {
+           callback(new Error('请输入数字'));
+         }
+         if (parseInt(value) > 120 || parseInt(value) <= 0) {
+           callback(new Error('请输入合理的年龄'));
+         }
+         callback()
+       };
+   ...
+   }
+   ```
+
+   ```javascript
+   age: [
+   		{ validator: checkAge, trigger: 'blur' }
+   	 ],
+   ```
+
+3. 验证联系方式
+
+   ```vue
+   <el-form-item label="联系方式" prop="phone">
+         <el-input v-model="form.phone" placeholder="请输入联系方式"></el-input>
+   </el-form-item>
+   ```
+
+   ```javascript
+   //  验证联系方式
+       const checkPhone = (rule, value, callback) => {
+         if (!/^[1][3,4,5,6,7,8,9][0-9]{9}$/.test(value)) {
+           callback(new Error('请输入合法的手机号'));
+         }
+         callback()
+   	};
+   ```
+
+   ```javascript
+   phone: [
+   		{ validator: checkPhone, trigger: 'blur' }
+   	   ]
+   ```
+
+- 修改代码——清空表单数据
+
+  ```javascript
+      sava() {
+        this.$refs['ruleForm'].validate((valid) => {
+          if (valid) {
+            request.post('/user/sava', this.form).then(
+                res => {
+                  if (res.code === '200') {
+                    this.$notify.success('新增成功')
+                    this.$refs['ruleForm'].resetFields()
+                      //	this.form={}
+                  } else {
+                    this.$notify.error(res.msg)
+                  }
+                })
+          }
+        })
+      },
+  ```
+
+- 在新增界面实现了重置按钮（解决了我早上没有实现的功能！！简直是重大突破🙂）
+
+  ```vue
+  <el-button type="warning" @click="resetForm('ruleForm')">重置</el-button>
+  ```
+
+  ```javascript
+  resetForm(ruleForm) {
+  	this.$refs['ruleForm'].resetFields();
+  }
+  ```
+
+  > ​	一定要修改`formName`的值，即在最上面定义的`ref="ruleForm"`的值！
+
+# 6、克隆模块
