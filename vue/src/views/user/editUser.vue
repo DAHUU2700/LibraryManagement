@@ -2,6 +2,9 @@
   <div style="margin: 20px;width: 300px">
     <h2 style="margin-bottom: 30px">编辑用户</h2>
   <el-form label-width="80px" ref="form" :model="form">
+    <el-form-item label="会员卡号" prop="name">
+      <el-input v-model="form.username" disabled></el-input>
+    </el-form-item>
     <el-form-item label="姓名" prop="name">
       <el-input v-model="form.name" placeholder="请输入姓名"></el-input>
     </el-form-item>
@@ -12,17 +15,17 @@
       <el-input v-model="form.phone" placeholder="请输入联系方式"></el-input>
     </el-form-item>
     <el-form-item label="性别" prop="sex">
-      <el-input v-model="form.sex" placeholder="请输入性别"></el-input>
+      <el-radio v-model="form.sex" label="男">男</el-radio>
+      <el-radio v-model="form.sex" label="女">女</el-radio>
     </el-form-item>
     <el-form-item label="地址" prop="address">
-      <el-input v-model="form.address" placeholder="请输入姓名"></el-input>
+      <el-input v-model="form.address" placeholder="请输入地址"></el-input>
     </el-form-item>
   </el-form>
 
       <!--  按钮  -->
     <div style="text-align: center;margin-top: 30px">
-      <el-button type="primary" @click="update">提交</el-button>
-<!--      <el-button type="warning" @click="resetForm">重置</el-button>-->
+      <el-button type="primary" @click="update">提交修改</el-button>
     </div>
 
   </div>

@@ -2,6 +2,7 @@ package com.example.springboot.service.impl;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.example.springboot.controller.request.UserPageRequest;
 import com.example.springboot.entity.User;
 import com.example.springboot.mapper.UserMapper;
@@ -38,8 +39,8 @@ public class UserService implements IUserService {
     @Override
     public void sava(User user) {
         Date date = new Date();
-        //  生成卡号
-        user.setUsername(DateUtil.format(date,"yyyMMdd") + IdUtil.simpleUUID());
+        //  生成卡号（当前时间 + 随机6位数字）
+        user.setUsername(DateUtil.format(date,"yyyMMdd") + RandomUtil.randomNumbers(6));
         userMapper.sava(user);
     }
 

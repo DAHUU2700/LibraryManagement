@@ -3,7 +3,7 @@
     <!--  头部  -->
     <div style="height: 80px;line-height: 80px;background: white;margin-bottom: 2px">
       <img src="@/assets/logo.png" alt="logo" style="width: 50px; position: relative;top: 15px;left: 20px">
-      <span style="margin-left: 28px;font-size: 24px;font-family: 黑体">图书管理系统</span>
+      <span style="margin-left: 28px;font-size: 24px;font-family: 黑体">青龙山图书管理系统</span>
     </div>
 
     <!--  侧边栏和主体  -->
@@ -21,14 +21,14 @@
           router class="el-menu-demo">
 
         <el-menu-item index="/">
-          <i class="el-icon-s-platform"></i>
+          <i class="el-icon-s-home"></i>
           <span>首页</span>
         </el-menu-item>
 
 
         <el-submenu index="/">
           <template slot="title">
-            <i class="el-icon-more"></i>
+            <i class="el-icon-user"></i>
             <span>会员管理</span>
           </template>
           <el-menu-item index="addUser">添加会员</el-menu-item>
