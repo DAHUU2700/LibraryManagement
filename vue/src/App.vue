@@ -26,15 +26,15 @@
         </el-menu-item>
 
 
-        <el-submenu>
+        <el-submenu index="">
           <template slot="title">
             <i class="el-icon-more"></i>
             <span>关于页面</span>
           </template>
-
           <el-menu-item index="/about">详情about</el-menu-item>
           <el-menu-item index="2-2">选项2</el-menu-item>
           </el-submenu>
+
         <el-menu-item index="3" disabled>消息中心</el-menu-item>
       </el-menu>
       </div>
