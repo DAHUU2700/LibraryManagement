@@ -16,32 +16,29 @@
       margin-right: 2px;
       background-color: white">
       <el-menu
-          :default-active="$route.path === '/'? $route.path : $route.path.substring(1)"
-          :default-openeds="['/']"
-          router class="el-menu-demo">
+          :default-active="$route.path" router class="el-menu-demo">
 
         <el-menu-item index="/">
           <i class="el-icon-s-home"></i>
           <span>首页</span>
         </el-menu-item>
 
-
-        <el-submenu index="/">
+        <el-submenu index="user">
           <template slot="title">
             <i class="el-icon-user"></i>
             <span>会员管理</span>
           </template>
-          <el-menu-item index="addUser">添加会员</el-menu-item>
-          <el-menu-item index="user">会员列表</el-menu-item>
+          <el-menu-item index="/addUser">添加会员</el-menu-item>
+          <el-menu-item index="/userList">会员列表</el-menu-item>
           </el-submenu>
 
-        <el-submenu index="/">
+        <el-submenu index="admin">
           <template slot="title">
             <i class="el-icon-user-solid"></i>
             <span>管理员管理</span>
           </template>
-          <el-menu-item index="Add">添加管理员</el-menu-item>
-          <el-menu-item index="admin">管理员列表</el-menu-item>
+          <el-menu-item index="/Add">添加管理员</el-menu-item>
+          <el-menu-item index="/adminList">管理员列表</el-menu-item>
         </el-submenu>
 
         <el-menu-item index="aboutMore" disabled>

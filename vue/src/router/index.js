@@ -16,8 +16,8 @@ const routes = [
    */
 
   {
-    path: '/user',
-    name: 'User',
+    path: '/userList',
+    name: 'UserList',
     component: () => import('@/views/user/User')
   },
   {
@@ -36,8 +36,8 @@ const routes = [
    */
 
   {
-    path: '/admin',
-    name: 'Admin',
+    path: '/adminList',
+    name: 'AdminList',
     component: () => import('@/views/admin/Admin')
   },
   {
