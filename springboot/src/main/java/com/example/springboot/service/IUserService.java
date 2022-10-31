@@ -2,6 +2,7 @@ package com.example.springboot.service;
 
 import com.example.springboot.controller.request.UserPageRequest;
 import com.example.springboot.entity.User;
+import com.github.pagehelper.PageInfo;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ public interface IUserService {
     List<User> list();
 
     //  分页
-    Object page(UserPageRequest userPageRequest);
+    PageInfo<User> page(UserPageRequest baseRequest);
 
     //  添加
     void sava(User user);

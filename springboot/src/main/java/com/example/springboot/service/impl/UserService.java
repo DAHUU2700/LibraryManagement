@@ -1,7 +1,6 @@
 package com.example.springboot.service.impl;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.example.springboot.controller.request.UserPageRequest;
 import com.example.springboot.entity.User;
@@ -28,10 +27,9 @@ public class UserService implements IUserService {
 
     //  分页
     @Override
-    public Object page(UserPageRequest userPageRequest) {
-        PageHelper.startPage(userPageRequest.getPageNum(),userPageRequest.getPageSize());
-        //  条件查询
-        List<User> users = userMapper.listByCondition(userPageRequest);
+    public PageInfo<User> page(UserPageRequest baseRequest) {
+        PageHelper.startPage(baseRequest.getPageNum(), baseRequest.getPageSize());
+        List<User> users = userMapper.listByCondition(baseRequest);
         return new PageInfo<>(users);
     }
 

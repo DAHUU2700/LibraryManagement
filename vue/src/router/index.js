@@ -10,6 +10,11 @@ const routes = [
     name: 'home',
     component: HomeView,
   },
+
+  /**
+   *  用户管理user路由
+   */
+
   {
     path: '/user',
     name: 'User',
@@ -24,7 +29,28 @@ const routes = [
     path: '/editUser',
     name: 'editUser',
     component: () => import('@/views/user/editUser')
+  },
+
+  /**
+   *  管理员admin路由
+   */
+
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('@/views/admin/Admin')
+  },
+  {
+    path: '/Add',
+    name: 'Add',
+    component: () => import('@/views/admin/Add')
+  },
+  {
+    path: '/Edit',
+    name: 'Edit',
+    component: () => import('@/views/admin/Edit')
   }
+
 ]
 
 const router = new VueRouter({

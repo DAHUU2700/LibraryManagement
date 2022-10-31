@@ -35,8 +35,22 @@
           <el-menu-item index="user">会员列表</el-menu-item>
           </el-submenu>
 
-        <el-menu-item index="3" disabled>消息中心</el-menu-item>
+        <el-submenu index="/">
+          <template slot="title">
+            <i class="el-icon-user-solid"></i>
+            <span>管理员管理</span>
+          </template>
+          <el-menu-item index="Add">添加管理员</el-menu-item>
+          <el-menu-item index="admin">管理员列表</el-menu-item>
+        </el-submenu>
+
+        <el-menu-item index="aboutMore" disabled>
+          <i class="el-icon-question"></i>
+          <span>项目详情</span>
+        </el-menu-item>
+
       </el-menu>
+
       </div>
 
         <!--   主体数据   -->
