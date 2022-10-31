@@ -1787,6 +1787,718 @@ export default {
 
   > ​	一定要修改`formName`的值，即在最上面定义的`ref="ruleForm"`的值！
 
-# 6、克隆模块
+# 6、克隆模块-管理员Admin
 
-1
+完成管理员`admin`代码，与用户相同，小略。
+
+## 6.1 数据库Mysql
+
+```sql
+SET FOREIGN_KEY_CHECKS=0;
+-- ----------------------------
+-- Table structure for admin
+-- ----------------------------
+DROP TABLE IF EXISTS `admin`;
+CREATE TABLE `admin` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户名',
+  `phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '联系方式',
+  `password` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '密码',
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱',
+  `createtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updatetime` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## 6.2  后端
+
+新增大体结构：
+
+![image-20221031122409833](./pic/note-13.png)
+
+- `AdminPageRequest`
+
+```java
+package com.example.springboot.controller.request;
+
+import lombok.Data;
+
+@Data
+public class AdminPageRequest extends BaseRequest{
+    private String username;
+    private String phone;
+    private String email;
+}
+```
+
+- `Admin`：
+
+```java
+package com.example.springboot.entity;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+
+import java.util.Date;
+
+@Data
+public class Admin {
+    private Integer id;
+    private String username;
+    private String phone;
+    private String email;
+    private String password;
+    @JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
+    private Date createtime;
+    @JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
+    private Date updatetime;
+}
+```
+
+- `AdminMapper`
+
+```java
+package com.example.springboot.mapper;
+
+import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.entity.Admin;
+import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
+
+@Mapper
+public interface AdminMapper {
+    //  查询所有
+    List<Admin> list();
+
+    //  条件查询（多态的方式）
+    List<Admin> listByCondition(BaseRequest baseRequest);
+
+    //  添加
+    void sava(Admin admin);
+
+    //  根据id查询
+    Admin getById(Integer id);
+
+    //  更新
+    void updateById(Admin admin);
+
+    //  删除
+    void deleteById(Integer id);
+}
+```
+
+- `Admin.xml`
+
+```java
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springboot.mapper.AdminMapper">
+
+    <!--  查询所有  -->
+    <select id="list" resultType="com.example.springboot.entity.Admin">
+        select * from admin
+        order by id desc;
+    </select>
+
+    <!--  条件查询  -->
+    <select id="listByCondition" resultType="com.example.springboot.entity.Admin">
+        select * from admin
+        <where>
+            <if test="username != null and username != ''">
+                username like concat('%', #{username}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                and phone  like concat('%', #{ phone }, '%')
+            </if>
+            <if test="email != null and email != ''">
+                and email  like concat('%', #{email}, '%')
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <!--  添加  -->
+    <insert id="sava">
+        insert into admin(username,password,phone,email)
+        values (#{username},#{password},#{phone},#{email})
+    </insert>
+
+    <!--  修改(根据id查询)  -->
+    <select id="getById" resultType="com.example.springboot.entity.Admin">
+        select * from admin where id = #{id}
+    </select>
+
+    <!--  更新  -->
+    <update id="updateById">
+        update admin set
+            username = #{username},phone = #{phone},email = #{email},updatetime = #{updatetime}
+            where id =#{id}
+    </update>
+
+    <!--  删除  -->
+    <delete id="deleteById">
+        delete from admin where id = #{id}
+    </delete>
+        
+</mapper>
+```
+
+- `IAdminService`
+
+```java
+package com.example.springboot.service;
+
+import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.entity.Admin;
+import com.github.pagehelper.PageInfo;
+
+import java.util.List;
+
+public interface IAdminService {
+    //  查询所有
+    List<Admin> list();
+
+    //  分页
+    PageInfo<Admin> page(BaseRequest baseRequest);
+
+    //  添加
+    void save(Admin admin);
+
+    //  根据id查询
+    Admin getById(Integer id);
+
+    //  更新
+    void update(Admin admin);
+
+    //  删除
+    void deleteById(Integer id);
+
+}
+```
+
+- `AdminService`
+
+```java
+package com.example.springboot.service.impl;
+
+import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.entity.Admin;
+import com.example.springboot.entity.User;
+import com.example.springboot.mapper.AdminMapper;
+import com.example.springboot.service.IAdminService;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.Date;
+import java.util.List;
+
+@Service
+public class AdminService implements IAdminService {
+
+    @Autowired
+    AdminMapper adminMapper;
+
+    //  查询所有
+    @Override
+    public List<Admin> list() {
+        return adminMapper.list();
+    }
+
+    //  分页
+    @Override
+    public PageInfo<Admin> page(BaseRequest baseRequest) {
+        PageHelper.startPage(baseRequest.getPageNum(), baseRequest.getPageSize());
+        List<Admin> admins = adminMapper.listByCondition(baseRequest);
+        return new PageInfo<>(admins);
+    }
+
+    //  添加
+    @Override
+    public void save(Admin admin) {
+        adminMapper.sava(admin);
+    }
+
+    //  根据id查询
+    @Override
+    public Admin getById(Integer id) {
+        return adminMapper.getById(id);
+    }
+
+    //  更新
+    @Override
+    public void update(Admin admin) {
+        admin.setUpdatetime(new Date());
+        adminMapper.updateById(admin);
+    }
+
+    //  删除
+    @Override
+    public void deleteById(Integer id) {
+        adminMapper.deleteById(id);
+    }
+}
+```
+
+- `AdminController`
+
+```java
+package com.example.springboot.controller;
+
+import com.example.springboot.common.Result;
+import com.example.springboot.controller.request.AdminPageRequest;
+import com.example.springboot.entity.Admin;
+import com.example.springboot.service.IAdminService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@CrossOrigin    //  跨域
+@RequestMapping("/admin")
+public class AdminController {
+    @Autowired
+    IAdminService adminService;
+
+    //  查询所有
+    @GetMapping("/list")
+    public Result list() {
+        List<Admin> list = adminService.list();
+        return Result.success(list);
+    }
+
+    //  分页
+    @GetMapping("/page")
+    public Result page(AdminPageRequest adminPageRequest) {
+        return Result.success(adminService.page(adminPageRequest));
+    }
+
+    //  添加
+    @PostMapping("/sava")   //这里不加，也可以直接通过"/"访问
+    public Result save(@RequestBody Admin admin) {
+        adminService.save(admin);
+        return Result.success();
+    }
+
+    //  （根据id查询）
+    @GetMapping("/{id}")
+    public Result getById(@PathVariable Integer id) {
+        Admin admin = adminService.getById(id);
+        return Result.success(admin);
+    }
+
+    //  更新
+    @PutMapping("/update")
+    public Result update(@RequestBody Admin admin) {
+        adminService.update(admin);
+        return Result.success();
+    }
+
+    //  删除
+    @DeleteMapping("/delete/{id}")
+    public Result delete(@PathVariable Integer id) {
+        adminService.deleteById(id);
+        return Result.success();
+    }
+}
+```
+
+### 6.2.1 Bug需注意
+
+1. 各种注解一定不能少：如：
+
+   ```java
+   @Mapper
+   public interface AdminMapper {
+       ...
+   }
+   
+   @Service
+   public class AdminService implements IAdminService {
+       ...
+   }
+   //	等
+   ```
+
+2. 小心跨域错误问题，`@CrossOrigin `；
+
+3. `xml`中的sql语句一定仔细！
+
+## 6.3 前端
+
+大体结构：
+
+![image-20221031160010244](./pic/note-14.png)
+
+由于需要新增页面，需要对侧边导航栏`App.vue`进行添加、实现与user相同的新增、更新、列表等，需要对路由`index.js`进行添加。
+
+- `App.vue`
+
+```vue
+...
+	<el-submenu index="/">
+         <template slot="title">
+           <i class="el-icon-user-solid"></i>
+           <span>管理员管理</span>
+         </template>
+        <el-menu-item index="Add">添加管理员</el-menu-item>
+          <el-menu-item index="admin">管理员列表</el-menu-item>
+        </el-submenu>
+...
+```
+
+- `index.js`
+
+```js
+/**
+   *  管理员admin路由
+   */
+
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('@/views/admin/Admin')
+  },
+  {
+    path: '/Add',
+    name: 'Add',
+    component: () => import('@/views/admin/Add')
+  },
+  {
+    path: '/Edit',
+    name: 'Edit',
+    component: () => import('@/views/admin/Edit')
+  }
+```
+
+- `admin\Add.vue`
+
+```vue
+<template>
+  <div>
+    <!-- 新增表单 -->
+    <div style="margin: 20px;width: 300px">
+      <h2 style="margin-bottom: 30px">新增管理员</h2>
+      <el-form label-width="80px" :model="form" :rules="rules" ref="ruleForm">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" placeholder="请输入用户名"></el-input>
+        </el-form-item>
+        <el-form-item label="联系方式" prop="phone">
+          <el-input v-model="form.phone" placeholder="请输入联系方式"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="form.email" placeholder="请输入邮箱"></el-input>
+        </el-form-item>
+      </el-form>
+
+      <!--  按钮  -->
+      <div style="text-align: center;margin-top: 30px">
+        <el-button type="primary" @click="sava">提交</el-button>
+        <el-button type="warning" @click="resetForm('ruleForm')">重置</el-button>
+      </div>
+
+    </div>
+  </div>
+</template>
+
+<script>
+
+import request from "@/utils/request";
+
+export default {
+  name: "Add",
+  data() {
+    //  验证联系方式
+    const checkPhone = (rule, value, callback) => {
+      if (!/^[1][3,4,5,6,7,8,9][0-9]{9}$/.test(value)) {
+        callback(new Error('请输入合法的手机号'));
+      }
+      callback()
+    };
+
+    return {
+      form: {},
+
+      ruleForm: {
+        username: '',
+        phone: '',
+        email: ''
+      },
+
+      rules: {
+        //	此处的name、age、phone和prop设置的属性对应
+        username: [
+          { required: true, message: '请输入用户名', trigger: 'blur' },
+          { min: 3, max: 10, message: '长度在 3 到 5 个字符', trigger: 'blur' }
+        ],
+
+        //  验证联系方式
+        phone: [
+          { validator: checkPhone, trigger: 'blur' }
+        ],
+
+        //  验证邮箱
+        email: [
+          // { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+          { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+        ]
+      },
+
+    }
+  },
+
+  methods: {
+    //  添加数据（连接后台）
+    sava() {
+      this.$refs['ruleForm'].validate((valid) => {
+        if (valid) {
+          request.post('/admin/sava', this.form).then(
+              res => {
+                if (res.code === '200') {
+                  this.$notify.success('新增成功')
+                  this.$refs['ruleForm'].resetFields()
+                } else {
+                  this.$notify.error(res.msg)
+                }
+              })
+        }
+      })
+    },
+    resetForm(ruleForm) {
+      this.$refs['ruleForm'].resetFields();
+    }
+  }
+
+}
+
+</script>
+
+<style scoped>
+
+</style>
+```
+
+- `admin\Edit.vue`
+
+```vue
+<template>
+  <div>
+    <div style="margin: 20px;width: 300px">
+      <h2 style="margin-bottom: 30px">编辑管理员</h2>
+      <el-form label-width="80px" ref="form" :model="form">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="联系方式" prop="phone">
+          <el-input v-model="form.phone" placeholder="请输入联系方式"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="form.email" placeholder="请输入地址"></el-input>
+        </el-form-item>
+      </el-form>
+
+      <!--  按钮  -->
+      <div style="text-align: center;margin-top: 30px">
+        <el-button type="primary" @click="update">提交修改</el-button>
+      </div>
+
+    </div>
+  </div>
+</template>
+
+<script>
+import request from "@/utils/request";
+
+export default {
+  name: "Edit",
+  data() {
+    return {
+      form: {}
+    }
+  },
+
+  created() {
+    const id = this.$route.query.id
+    request.get("/admin/" + id).then(res => {
+      this.form = res.data
+    })
+  },
+
+  methods: {
+    //  更新表单
+    update() {
+      request.put('/admin/update', this.form).then(
+          res => {
+            if (res.code === '200') {
+              this.$notify.success('更新成功')
+              this.$router.push("/admin")
+            } else {
+              this.$notify.error(res.msg)
+            }
+          })
+    },
+  }
+}
+</script>
+
+<style scoped>
+
+</style>
+```
+
+- `admin\Admin.vue`
+
+```vue
+<template>
+  <div>
+    <!--    搜索表单    -->
+    <div style="margin-bottom: 10px;margin-top: 10px;margin-left: 10px">
+      <el-input style="width: 240px" placeholder="请输入用户名" v-model="params.username"></el-input>
+      <el-input style="width: 240px; margin: 6px" placeholder="请输入联系方式" v-model="params.phone" ></el-input>
+      <el-input style="width: 240px;" placeholder="请输入邮箱" v-model="params.email" ></el-input>
+      <el-button style="margin-left: 8px" type="primary" @click="load"><i class="el-icon-search"></i>搜索</el-button>
+      <el-button style="margin-left: 6px" type="warning" @click="reset"><i class="el-icon-refresh"></i>重置</el-button>
+    </div>
+
+    <!--  表头  -->
+    <el-table :data="tableData" stripe>
+      <el-table-column prop="id" label="编号" width="60"></el-table-column>
+      <el-table-column prop="username" label="用户名" width="150"></el-table-column>
+      <el-table-column prop="phone" label="联系方式"></el-table-column>
+      <el-table-column prop="email" label="邮箱"></el-table-column>
+      <el-table-column prop="createtime" label="创建时间"></el-table-column>
+      <el-table-column prop="updatetime" label="更新时间"></el-table-column>
+
+      <!--   操作（编辑&删除）   -->
+      <el-table-column label="操作">
+        <template v-slot="scope">
+          <!--     scope.row 就是当前行数据     -->
+          <el-button type="primary" @click="$router.push('/Edit?id=' + scope.row.id)" class="el-icon-setting">编辑</el-button>
+          <el-popconfirm
+              style="margin-left: 8px"
+              title="您确定删除吗？"
+              @confirm = "del(scope.row.id)">
+            <el-button type="danger" slot="reference" class="el-icon-delete">删除</el-button>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- 分页 -->
+    <div style="margin-top: 20px">
+      <el-pagination
+          background
+          :current-page="params.pageNum"
+          :page-size="params.pagesize"
+          layout="prev, pager, next"
+          @current-change="handleCurrentChange"
+          :total=total>
+      </el-pagination>
+    </div>
+  </div>
+
+</template>
+
+<script>
+//  导入request包
+import request from "@/utils/request";
+
+export default {
+  name: "Admin",
+  data(){
+    return {
+      tableData: [],
+      //  绑定total，默认为0
+      total:0,
+      //  传入参数
+      params: {
+        pageNum: 1,
+        pagesize: 10,
+        name: '',
+        phone: '',
+        email: ''
+      }
+    }
+  },
+  created() {
+    this.load()
+  },
+  methods:{
+    //  加载
+    load() {
+      request.get(
+          '/admin/page',
+          //  传递参数
+          {params:this.params})
+          .then(res => {
+                //  进行判断200再赋值
+                if(res.code === '200'){
+                  //  data.list 才是数据库中的数据
+                  this.tableData = res.data.list
+                  //  绑定total
+                  this.total = res.data.total
+                }
+              }
+          )
+    },
+    //  重置按钮功能
+    reset() {
+      this.params = {
+        pageNum: 1,
+        pagesize: 10,
+        name: '',
+        phone: '',
+        email: ''
+      }
+      this.load()
+    },
+    //  点击触发分页效果
+    handleCurrentChange(pageNum) {
+      this.params.pageNum = pageNum
+      this.load()
+      // console.log(pageNum)
+    },
+    //  删除按钮功能
+    del(id) {
+      request.delete("admin/delete/" + id).then(res => {
+        if(res.code === '200') {
+          this.$notify.success('删除成功')
+          this.load()
+        } else {
+          this.$notify.error(res.msg)
+        }
+      })
+    }
+
+  }
+}
+</script>
+
+<style scoped>
+
+</style>
+```
+
+### 6.3.1 Bug需注意
+
+1. Vue报错`Error compiling template: Component template should contain exactly one root element. If you`；`<template>`模板下只包含一个标签元素，而不是两个甚至多个。
+
+   ```vue
+   <template>
+       <div>
+           <h2>{{cmessage}}</h2>
+           <p>...</p>
+       </div>
+   </template>
+   ```
+
+2. 属性一定需要对照，功能方面，官方文档一般都能解决。
+
+
+
