@@ -1817,6 +1817,8 @@ CREATE TABLE `admin` (
 
 ![image-20221031122409833](./pic/note-13.png)
 
+### 6.2.1 代码实现
+
 - `AdminPageRequest`
 
 ```java
@@ -2109,7 +2111,7 @@ public class AdminController {
 }
 ```
 
-### 6.2.1 Bug需注意
+### 6.2.2 Bug需注意
 
 1. 各种注解一定不能少：如：
 
@@ -2137,6 +2139,8 @@ public class AdminController {
 ![image-20221031160010244](./pic/note-14.png)
 
 由于需要新增页面，需要对侧边导航栏`App.vue`进行添加、实现与user相同的新增、更新、列表等，需要对路由`index.js`进行添加。
+
+### 6.3.1 代码实现
 
 - `App.vue`
 
@@ -2535,7 +2539,7 @@ export default {
 </style>
 ```
 
-### 6.3.1 Bug需注意
+### 6.3.2 Bug需注意
 
 1. Vue报错`Error compiling template: Component template should contain exactly one root element. If you`；`<template>`模板下只包含一个标签元素，而不是两个甚至多个。
 
@@ -2550,5 +2554,253 @@ export default {
 
 2. 属性一定需要对照，功能方面，官方文档一般都能解决。
 
+# 7、登录
 
+## 7.1 前端
 
+### 7.1.1 调整路由结构
+
+`route\index.js`
+
+```java
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+import Layout from '@/views/Layout'
+
+Vue.use(VueRouter)
+
+const routes = [
+  /*
+   *  父级：登录页面
+   */
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/Login')
+  },
+
+  //  父级：主页(头部 + 侧边栏)
+  {
+    path: '/',
+    name: 'home',
+    component: Layout,
+    redirect: '/home',   //重定向到首页！
+    children : [
+    //  子级会自动拼接path中的'/',因此子路由children不需要加'/'
+      //  首页
+      {
+        path: 'home',
+        name: 'Home',
+        component: () => import('@/views/home/HomeView')
+      },
+
+      //  用户管理user路由
+
+      {
+        path: 'userList',
+        name: 'UserList',
+        component: () => import('@/views/user/User')
+      },
+      {
+        path: 'addUser',
+        name: 'addUser',
+        component: () => import('@/views/user/addUser')
+      },
+      {
+        path: 'editUser',
+        name: 'editUser',
+        component: () => import('@/views/user/editUser')
+      },
+
+      //  管理员admin路由
+
+      {
+        path: 'adminList',
+        name: 'AdminList',
+        component: () => import('@/views/admin/Admin')
+      },
+      {
+        path: 'Add',
+        name: 'Add',
+        component: () => import('@/views/admin/Add')
+      },
+      {
+        path: 'Edit',
+        name: 'Edit',
+        component: () => import('@/views/admin/Edit')
+      }
+
+    ]
+  }
+]
+
+const router = new VueRouter({
+  mode: 'history',
+  base: process.env.BASE_URL,
+  routes
+})
+
+export default router
+```
+
+注意点：
+
+1. 跳转前后地址栏地址会发生变化，使用重定向。（重定向与转发的特点）
+2. 在设置了子路由`children: []`后，子路由中的`'/'`应该去除，父级会拼接`/`的。
+
+### 7.1.2 页面调整及登录页面
+
+<img src="./pic/note-15.png" alt="image-20221031220813246" style="zoom: 67%;" />
+
+新建`login\Login.vue`，将主页修改为`Layout`；之前是放在`App.vue`中的，`HomeView.vue`只是放在文件中。
+
+`login.vue`：
+
+- ```vue
+  <template>
+    <div style="height: 100vh ; overflow: hidden">
+      <div style="width: 500px; height: 400px;background-color: white;border-radius: 10px;margin: 150px auto;padding: 50px">
+        <div style="margin: 30px;text-align: center;  font-size: 30px; font-weight: bold;color: dodgerblue">
+          <span>登　录</span>
+          <el-form :model="admin" ref="loginForm">
+  
+            <el-form-item prop="username">
+              <el-input placeholder="请输入用户名" prefix-icon="el-icon-user" seiz="medium" v-model="admin.username"></el-input>
+            </el-form-item>
+  
+            <el-form-item prop="password">
+              <el-input placeholder="请输入密码" prefix-icon="el-icon-lock" seiz="medium" v-model="admin.password"></el-input>
+            </el-form-item>
+  
+            <el-form-item>
+              <el-button style="width: 100%" size="medium" type="primary" @click="login">登录</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  
+  import request from "@/utils/request";
+  
+  export default {
+    name: "LOGIN",
+    data() {
+      return {
+        admin: {}
+      }
+    },
+    method : {
+      login() {
+        request.post('/admin/login',this.admin).then(res => {
+          if (res.code === '200') {
+            this.$notify.success("登录成功")
+            this.$router.push('/')
+          } else {
+            this.$notify.error(res.msg)
+          }
+        })
+      }
+  
+    }
+  }
+  </script>
+  
+  <style scoped>
+  
+  </style>
+  ```
+
+`Layout.vue`：
+
+- ```vue
+  <!-- 嵌套主页内容 加载实际页面 -->
+  <template>
+    <div id="app">
+      <!--  头部  -->
+      <div style="height: 80px;line-height: 80px;background: white;margin-bottom: 2px">
+        <img src="@/assets/logo.png" alt="logo" style="width: 50px; position: relative;top: 15px;left: 20px">
+        <span style="margin-left: 28px;font-size: 24px;font-family: 黑体">青龙山图书管理系统</span>
+      </div>
+  
+      <!--  侧边栏和主体  -->
+      <div style="display: flex">
+        <!--    侧边栏导航    -->
+        <div style="width: 200px;
+        min-height: calc(100vh - 82px);
+        /*最小行高 100vh占满全屏，82px = 头部height80px + margin-bottom 2px */
+        overflow: hidden;
+        margin-right: 2px;
+        background-color: white">
+          <el-menu
+              :default-active="$route.path" router class="el-menu-demo">
+  
+            <el-menu-item index="/">
+              <i class="el-icon-s-home"></i>
+              <span>首页</span>
+            </el-menu-item>
+  
+            <el-submenu index="user">
+              <template slot="title">
+                <i class="el-icon-user"></i>
+                <span>会员管理</span>
+              </template>
+              <el-menu-item index="/addUser">添加会员</el-menu-item>
+              <el-menu-item index="/userList">会员列表</el-menu-item>
+            </el-submenu>
+  
+            <el-submenu index="admin">
+              <template slot="title">
+                <i class="el-icon-user-solid"></i>
+                <span>管理员管理</span>
+              </template>
+              <el-menu-item index="/Add">添加管理员</el-menu-item>
+              <el-menu-item index="/adminList">管理员列表</el-menu-item>
+            </el-submenu>
+  
+            <el-menu-item index="aboutMore" disabled>
+              <i class="el-icon-question"></i>
+              <span>项目详情</span>
+            </el-menu-item>
+  
+          </el-menu>
+  
+        </div>
+  
+        <!--   主体数据   -->
+        <div style="flex: 1;background-color: white">
+          <router-view/>
+  
+        </div>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  export default {
+    name: "Layout"
+  }
+  </script>
+  
+  <style scoped>
+  
+  </style>
+  ```
+
+`App.vue`
+
+- ```vue
+  <template>
+    <!-- 只能显示父路由 -->
+    <div id="app">
+  
+      <router-view/>
+    </div>
+  </template>
+  ```
+
+在 `<router-view/>`后接的都是子路由。
+
+## 6.3 后端
