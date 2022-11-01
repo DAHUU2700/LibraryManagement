@@ -1,6 +1,7 @@
 package com.example.springboot.mapper;
 
 import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.controller.request.LoginRequest;
 import com.example.springboot.entity.Admin;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -25,4 +26,7 @@ public interface AdminMapper {
 
     //  删除
     void deleteById(Integer id);
+
+    //  登录
+    Admin getByUsernameAndPassword(LoginRequest loginRequest);
 }

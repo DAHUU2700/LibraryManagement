@@ -2,6 +2,7 @@ package com.example.springboot.controller;
 
 import com.example.springboot.common.Result;
 import com.example.springboot.controller.request.AdminPageRequest;
+import com.example.springboot.controller.request.LoginRequest;
 import com.example.springboot.entity.Admin;
 import com.example.springboot.service.IAdminService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,5 +56,11 @@ public class AdminController {
     public Result delete(@PathVariable Integer id) {
         adminService.deleteById(id);
         return Result.success();
+    }
+
+    //  登录（是基于Admin的，所以写这）
+    @PostMapping("/login")
+    public Result login(@RequestBody LoginRequest loginRequest) {
+        return Result.success(adminService.login(loginRequest));
     }
 }

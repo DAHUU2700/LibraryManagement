@@ -6,7 +6,7 @@
         <el-form :model="admin" ref="loginForm">
 
           <el-form-item prop="username">
-            <el-input placeholder="请输入用户名" prefix-icon="el-icon-user" seiz="medium" v-model="admin.username"></el-input>
+            <el-input style="margin-top: 40px" placeholder="请输入用户名" prefix-icon="el-icon-user" seiz="medium" v-model="admin.username"></el-input>
           </el-form-item>
 
           <el-form-item prop="password">
@@ -33,7 +33,7 @@ export default {
       admin: {}
     }
   },
-  method : {
+  methods : {
     login() {
       request.post('/admin/login',this.admin).then(res => {
         if (res.code === '200') {
@@ -44,7 +44,6 @@ export default {
         }
       })
     }
-
   }
 }
 </script>
