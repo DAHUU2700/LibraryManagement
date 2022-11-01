@@ -796,7 +796,7 @@ mybatis:
 
 之前使用`fetch()`去实现的，需要自己去拼接地址，比较麻烦。因此使用`axios`插件，来处理前后端交互的数据。
 
-### 3.2.1 axios的安装
+### 3.2.1  <span id="axios">axios插件的安装</span>
 
 不知道是什么bug、在Terminal终端进入项目的vue目录后，执行安装语句，会报错；经过解决后使用`cmd（管理员）`完成插件的安装。
 
@@ -2937,4 +2937,239 @@ Admin getByUsernameAndPassword(LoginRequest loginRequest);
 ```
 
 # 8、数据安全
+
+### 8.1 登录界面验证
+
+```html
+<el-form :model="admin" :rules="rules" ref="loginForm"  >
+	//	别忘记rules、ref
+   	//	内部还需绑定prop和@click
+</el-form>
+```
+
+```javascript
+export default {
+  name: "LOGIN",
+  data() {
+    return {
+      admin: {},
+		//	登录校验规则
+      rules: {
+        username: [
+          {required: true, message: '请输入用户名', trigger: 'blur'},
+          {min: 3, max: 10, message: '长度在 3 到 10 个字符', trigger: 'blur'}
+        ],
+        password: [
+          {required: true, message: '请输入密码', trigger: 'blur'},
+          {min: 3, max: 10, message: '长度在 3 到 10 个字符', trigger: 'blur'}
+        ]
+      }
+    }
+   },
+      methods: {
+        login() {
+            //	登录按钮验证
+          this.$refs['loginForm'].validate((valid) => {
+            if (valid) {
+              request.post('/admin/login', this.admin).then(res => {
+                if (res.code === '200') {
+                  this.$notify.success("登录成功")
+                  this.$router.push('/')
+                } else {
+                  this.$notify.error(res.msg)
+                }
+              })
+            }
+          })
+        }
+      }
+    }
+```
+
+> **_BugTip_**：`TypeError: Cannot read property 'validate' of undefined at VueComponent.submitForm`；`ref`和 `$refs['']` 的关键字要一致。
+
+### 8.2 退出按钮
+
+在`Layout`中新添布局：
+
+```vue
+      <!--   右侧下拉框   -->
+      <div style="flex: 1;text-align: right;padding-right: 50px">
+        <el-dropdown size="medium">
+          <span class="el-dropdown-link" style="cursor: pointer">
+            管理员<i class="el-icon-arrow-down el-icon--right"></i>
+          </span>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item>
+              <div style="width: 60px;text-align: center;overflow: hidden" @click="logout" >退出</div>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+      </div>
+```
+
+```JavaScript
+  methods :　{
+    logout() {
+      //  跳转到登录界面
+      this.$router.push('/login')
+      //  清除浏览器用户数据
+    }
+```
+
+> **_BugTip_**：vue中给button按钮添加点击事件，事件不生效问题。
+>
+> - 原因：浮动的div将子元素button包裹，浏览器无法将其识别为有效宽高的元素，和button本身是没有关系的。
+> - 解决：元素`div`清除浮动`overflow:hidden`。
+
+### 8.3 浏览器数据缓存
+
+#### 8.3.1 js-cookie插件
+
+同样的，无法在终端中安装，参考：[3.2.1](#axios)
+
+- 安装代码：`npm i js-cookie -S`
+
+- 导入使用：`import Cookies from 'js-cookie'`
+
+  ```java
+  Cookies.set('user', obj)  // 默认失效时间为该网站关闭时
+  Cookies.set('user', obj, { expires: 1 })  // 1天过期
+  Cookies.get('user')  // 获取cookie数据
+  Cookies.remove('user')  // 删除cookie数据
+  ```
+
+#### 8.3.2 请求拦截器
+
+在`request.js`中设置拦截器，如果得到登录信息，才能进入，不然只能一直在登录页面。
+
+```js
+import Cookies from 'js-cookie'
+...
+
+//  没有登录信息就不能进主页home
+    //  请求拦截器
+    const admin =  Cookies.get('admin')
+    if (!admin) {
+        router.push('/login')
+    }
+```
+
+`Layout`，设置`{{ admin.username }}`
+
+- ```vue
+      <!--   右侧下拉框   -->
+      <div style="flex: 1;text-align: right;padding-right: 50px">
+        <el-dropdown size="medium">
+          <span class="el-dropdown-link" style="cursor: pointer">
+            {{ admin.username }}<i class="el-icon-arrow-down el-icon--right"></i>
+          </span>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item>
+              <div style="width: 60px;text-align: center;overflow: hidden" @click="logout" >退出</div>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+      </div>
+  
+- ```javascript
+  <script>
+  //  导入js-cookie
+  import Cookies from 'js-cookie'
+  
+  export default {
+    name: "Layout",
+      //	获取Cookie数据，获取到了再转为JSON
+    data() {
+      return {
+        admin: Cookies.get('admin') ? JSON.parse(Cookies.get('admin')) : {}
+      }
+    },
+  
+    methods :　{
+      logout() {
+        //  清除浏览器用户数据
+        Cookies.remove('admin')
+        //  跳转到登录界面
+        this.$router.push('/login')
+      }
+    }
+  }
+  </script>
+
+> **_BugTip_**：后台输出Cookie为：`[object%20JSON]`
+>
+> - `JSON.stringify() `方法是将一个JavaScript值（对象或者数组）转换为一个 JSON字符串；注意方法，我都不好意思写这个bug。
+
+`Login.vue`在登录时，如果不传入参数，Cookie是不会存储的。
+
+- ```javascript
+  methods: {
+  login() {
+          ...
+          if (res.data !== null) {
+            Cookies.set('admin',JSON.stringify(res.data))
+          }
+          ...
+  	}
+  }
+
+### 8.4 保护密码MD5
+
+防止直接通过后台看见密码；从而设置默认密码，并使用MD5方式加密。
+
+在业务层`AdminService.java`中实现
+
+1. 定义默认密码，和一段字符串：
+
+   ```java
+       private static final String DEFAULT_PASS = "123";
+       private static final String DEFAULT_SALT = "DAHUU";
+   ```
+
+2. 在新建管理员时应该有默认密码：
+
+   ```java
+   //  添加
+       @Override
+       public void save(Admin admin) {
+           //  设置默认密码
+           if (StrUtil.isBlank(admin.getPassword())) {
+               admin.setPassword(DEFAULT_PASS);
+           }
+           //  md5加密
+           //admin.setPassword(SecureUtil.md5(admin.getPassword() + DEFAULT_SALT));
+           admin.setPassword(SecurePass(admin.getPassword()));	
+           adminMapper.sava(admin);
+       }
+   ```
+
+3. 并且也需要修改登录时的业务逻辑：
+
+   ```java
+       //  登录
+       @Override
+       public LoginDTO login(LoginRequest loginRequest) {
+           //  登录的时候，也需要加密，
+   //loginRequest.setPassword(SecureUtil.md5(loginRequest.getPassword() + DEFAULT_SALT));
+           loginRequest.setPassword(SecurePass(loginRequest.getPassword()));
+           //  需要考虑异常！！
+           Admin adminLoginUAP = adminMapper.getByUsernameAndPassword(loginRequest);
+           if (adminLoginUAP == null) {
+               throw new ServiceException("用户名或密码错误");
+           }
+           LoginDTO loginDTO = new LoginDTO();
+           BeanUtils.copyProperties(adminLoginUAP,loginDTO);
+           return loginDTO;
+       }
+   ```
+
+4. 将实现相同逻辑的代码进行封装：
+
+   ```java
+       //  封装加密
+       public String SecurePass(String password) {
+           return SecureUtil.md5(password + DEFAULT_SALT);
+       }
+   ```
 
