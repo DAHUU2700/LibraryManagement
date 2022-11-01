@@ -1,4 +1,6 @@
 import axios from 'axios'
+import router from '@/router/index'
+import Cookies from 'js-cookie'
 
 const request = axios.create({
     baseURL: 'http://localhost:9090',
@@ -10,6 +12,13 @@ const request = axios.create({
 // 比如统一加token，对请求参数统一加密
 request.interceptors.request.use(config => {
     config.headers['Content-Type'] = 'application/json;charset=utf-8';
+
+    //  没有登录信息就不能进主页home
+    //  请求拦截器
+    const admin =  Cookies.get('admin')
+    if (!admin) {
+        router.push('/login')
+    }
 
     // config.headers['token'] = user.token;  // 设置请求头
     return config

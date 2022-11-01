@@ -1,5 +1,7 @@
 package com.example.springboot.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.SecureUtil;
 import com.example.springboot.controller.dto.LoginDTO;
 import com.example.springboot.controller.request.BaseRequest;
 import com.example.springboot.controller.request.LoginRequest;
@@ -26,6 +28,10 @@ public class AdminService implements IAdminService {
     @Autowired
     AdminMapper adminMapper;
 
+    private static final String DEFAULT_PASS = "123";
+    private static final String DEFAULT_SALT = "DAHUU";
+
+
     //  查询所有
     @Override
     public List<Admin> list() {
@@ -43,6 +49,13 @@ public class AdminService implements IAdminService {
     //  添加
     @Override
     public void save(Admin admin) {
+        //  设置默认密码
+        if (StrUtil.isBlank(admin.getPassword())) {
+            admin.setPassword(DEFAULT_PASS);
+        }
+        //  md5加密
+        //admin.setPassword(SecureUtil.md5(admin.getPassword() + DEFAULT_SALT));
+        admin.setPassword(SecurePass(admin.getPassword()));
         adminMapper.sava(admin);
     }
 
@@ -68,6 +81,9 @@ public class AdminService implements IAdminService {
     //  登录
     @Override
     public LoginDTO login(LoginRequest loginRequest) {
+        //  登录的时候，也需要加密，
+        //loginRequest.setPassword(SecureUtil.md5(loginRequest.getPassword() + DEFAULT_SALT));
+        loginRequest.setPassword(SecurePass(loginRequest.getPassword()));
         //  需要考虑异常！！
         Admin adminLoginUAP = adminMapper.getByUsernameAndPassword(loginRequest);
         if (adminLoginUAP == null) {
@@ -76,5 +92,10 @@ public class AdminService implements IAdminService {
         LoginDTO loginDTO = new LoginDTO();
         BeanUtils.copyProperties(adminLoginUAP,loginDTO);
         return loginDTO;
+    }
+
+    //  封装加密
+    public String SecurePass(String password) {
+        return SecureUtil.md5(password + DEFAULT_SALT);
     }
 }

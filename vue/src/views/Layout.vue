@@ -2,9 +2,27 @@
 <template>
   <div id="app">
     <!--  头部  -->
-    <div style="height: 80px;line-height: 80px;background: white;margin-bottom: 2px">
-      <img src="@/assets/logo.png" alt="logo" style="width: 50px; position: relative;top: 15px;left: 20px">
-      <span style="margin-left: 28px;font-size: 24px;font-family: 黑体">青龙山图书管理系统</span>
+    <div style="height: 80px;line-height: 80px;background: white;margin-bottom: 2px;display: flex">
+        <!--    左侧图标    -->
+      <div style="width: 400px">
+        <img src="@/assets/logo.png" alt="logo" style="width: 50px; position: relative;top: 15px;left: 20px">
+        <span style="margin-left: 28px;font-size: 24px;font-family: 黑体">青龙山图书管理系统</span>
+      </div>
+
+      <!--   右侧下拉框   -->
+      <div style="flex: 1;text-align: right;padding-right: 50px">
+        <el-dropdown size="medium">
+          <span class="el-dropdown-link" style="cursor: pointer">
+            {{ admin.username }}<i class="el-icon-arrow-down el-icon--right"></i>
+          </span>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item>
+              <div style="width: 60px;text-align: center;overflow: hidden" @click="logout" >退出</div>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+      </div>
+
     </div>
 
     <!--  侧边栏和主体  -->
@@ -61,8 +79,27 @@
 </template>
 
 <script>
+
+//  导入js-cookie
+import Cookies from 'js-cookie'
+
 export default {
-  name: "Layout"
+  name: "Layout",
+  data() {
+    return {
+      admin: Cookies.get('admin') ? JSON.parse(Cookies.get('admin')) : {}
+    }
+  },
+
+  methods :　{
+    logout() {
+      //  清除浏览器用户数据
+      Cookies.remove('admin')
+      //  跳转到登录界面
+      this.$router.push('/login')
+    }
+
+  }
 }
 </script>
 
