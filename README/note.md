@@ -360,7 +360,7 @@ public interface IUserService {
 }
 ```
 
-继承接口`IUserService`的实现类`UserService`：
+实现接口`IUserService`的实现类`UserService`：
 
 ```java
 package com.example.springboot.service.impl;
@@ -376,7 +376,7 @@ public class UserService implements IUserService {
     @Autowired
     UserMapper userMapper;
 
-    //	继承接口，必须重写接口中的方法
+    //	实现接口，必须重写接口中的方法
     @Override
     public List<User> listUser() {
         return userMapper.listUser();
@@ -2803,4 +2803,138 @@ export default router
 
 在 `<router-view/>`后接的都是子路由。
 
-## 6.3 后端
+> **_BugTip_**：`Invalid handler for event “click“: got undefined`
+>
+> 1. 函数没有写在`methods`里；
+>
+>    检查是不是直接写到组件的定义里去，或是写到data里面去了。
+>
+> 2. 调用的函数没有定义；
+>
+>    `@click=‘xxx’`，检查这个xxx有没有定义。
+>
+> 3. 调用的函数名写错了。
+
+## 7.2 后端
+
+<img src="./pic/note-16.png" alt="image-20221101105741566" style="zoom:67%;" />
+
+`dto`包：专门存放返回值的实体类；
+
+`exception`包：结合业务层进行异常处理。
+
+### 7.2.1 异常处理
+
+- 新建`LoginDTO`
+
+```java
+package com.example.springboot.controller.dto;
+import lombok.Data;
+
+//  专门存放返回值dto
+@Data
+public class LoginDTO {
+    private Integer id;
+    private String username;
+    private String phone;
+    private String email;
+}
+```
+
+- 新建`ExceptionHandle`，实现全局异常处理：
+
+```java
+package com.example.springboot.exception;
+import com.example.springboot.common.Result;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+//  全局异常处理
+@RestControllerAdvice
+@Slf4j
+public class ExceptionHandle {
+
+    //  对AdminService中的异常进行处理
+    @ExceptionHandler(value = ServiceException.class)
+    public Result serviceExceptionError(ServiceException e) {
+        log.error("业务异常",e);
+        return Result.error(e.getMessage());
+    }
+
+    @ExceptionHandler(value = Exception.class)
+    public Result exceptionError(Exception e) {
+        log.error("系统错误",e);
+        return Result.error("系统错误");
+    }
+}
+```
+
+- 新建`ServiceException`，处理业务异常的，虽然继承了`RuntimeException`，目的是不让业务和系统异常混淆。
+
+```java
+package com.example.springboot.exception;
+public class ServiceException extends RuntimeException {
+
+    public ServiceException(String message) {
+        super(message);
+    }
+}
+```
+
+> **_BugTip_**：`java.lang.IllegalArgumentException: Source must not be null`常见错误，写代码的时候未考虑异常情况。
+
+### 7.2.2 登录代码
+
+从前往后：
+
+- `Contrller`
+
+```java
+//  登录
+@PostMapping("/login")
+public Result login(@RequestBody LoginRequest loginRequest) {
+	return Result.success(adminService.login(loginRequest));
+}
+```
+
+- `Service`
+
+```java
+//  登录
+LoginDTO login(LoginRequest loginRequest);
+```
+
+```java
+//  登录
+@Override
+public LoginDTO login(LoginRequest loginRequest) {
+	//  需要考虑异常！！
+	Admin adminLoginUAP = adminMapper.getByUsernameAndPassword(loginRequest);
+	if (adminLoginUAP == null) {
+		throw new ServiceException("用户名或密码错误");
+	}
+	LoginDTO loginDTO = new LoginDTO();
+	BeanUtils.copyProperties(adminLoginUAP,loginDTO);
+	return loginDTO;
+}
+```
+
+- `mapper`
+
+```java
+//  登录
+Admin getByUsernameAndPassword(LoginRequest loginRequest);
+```
+
+- `xml`
+
+```xml
+<!--  登录  -->
+<select id="getByUsernameAndPassword" resultType="com.example.springboot.entity.Admin">
+	select * from admin where username = #{username} and password = #{password};
+</select>
+```
+
+# 8、数据安全
+
