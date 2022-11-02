@@ -91,6 +91,9 @@ public class AdminService implements IAdminService {
         if (adminLoginUAP == null) {
             throw new ServiceException("用户名或密码错误");
         }
+        if (!adminLoginUAP.isStatus()) {
+            throw new ServiceException("当前用户处于禁用状态，请联系管理员");
+        }
         LoginDTO loginDTO = new LoginDTO();
         BeanUtils.copyProperties(adminLoginUAP,loginDTO);
 

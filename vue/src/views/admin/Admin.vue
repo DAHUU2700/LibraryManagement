@@ -12,11 +12,22 @@
     <!--  表头  -->
     <el-table :data="tableData" stripe>
       <el-table-column prop="id" label="编号" width="100px"></el-table-column>
-      <el-table-column prop="username" label="用户名" width="200px"></el-table-column>
+      <el-table-column prop="username" label="用户名" width="150px"></el-table-column>
       <el-table-column prop="phone" label="联系方式" width="200px"></el-table-column>
-      <el-table-column prop="email" label="邮箱" width="300px"></el-table-column>
+      <el-table-column prop="email" label="邮箱" width="250px"></el-table-column>
       <el-table-column prop="createtime" label="创建时间" width="200px"></el-table-column>
       <el-table-column prop="updatetime" label="更新时间" width="200px"></el-table-column>
+
+      <el-table-column label="状态" width="230px">
+        <template v-slot="scope">
+          <el-switch
+              v-model="scope.row.status"
+              @change="changeStatus(scope.row)"
+              active-color="#13ce66"
+              inactive-color="#ff4949">
+          </el-switch>
+        </template>
+      </el-table-column>
 
       <!--   操作（编辑&删除&修改密码）   -->
       <el-table-column label="操作">
@@ -170,6 +181,22 @@ export default {
               this.$notify.error("修改失败")
             }
           })
+        }
+      })
+    },
+    //  修改状态
+    changeStatus(row) {
+      if (this.admin.id === row.id && !row.status) {
+        row.status = true
+        this.$notify.warning('您的操作不合法')
+        return
+      }
+      request.put('/admin/update', row).then(res => {
+        if (res.code === '200') {
+          this.$notify.success('操作成功')
+          this.load()
+        } else {
+          this.$notify.error(res.msg)
         }
       })
     },

@@ -41,8 +41,8 @@
     <!--  更新  -->
     <update id="updateById">
         update admin
-        set username = #{username},phone = #{phone},email = #{email},updatetime = #{updatetime}
-        where id =#{id}
+        set username = #{username}, phone = #{phone}, email = #{email}, updatetime = #{updatetime}, status = #{status}
+        where id = #{id}
     </update>
 
     <!--  删除  -->
@@ -58,7 +58,7 @@
     <!--  修改密码  -->
     <update id="updatePassword">
         update admin
-        set password = #{newPass},updatetime = #{updatetime}
+        set password = #{newPass}
         where username = #{username} and password = #{password}
     </update>
 
