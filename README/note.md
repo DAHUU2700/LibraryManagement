@@ -3678,3 +3678,66 @@ public class PasswordRequest {
 > - `POST`和`PUT`请求不一样噢！
 
 ## 9.2 禁用功能
+
+在admin表中新增一条表头`status`类型为：`tiyint`，默认为`1`
+
+前端：
+
+```vue
+      <el-table-column label="状态" width="230px">
+        <template v-slot="scope">
+          <el-switch
+              v-model="scope.row.status"
+              @change="changeStatus(scope.row)"
+              active-color="#13ce66"
+              inactive-color="#ff4949">
+          </el-switch>
+        </template>
+      </el-table-column>
+```
+
+```javascript
+    //  修改状态
+    changeStatus(row) {
+      if (this.admin.id === row.id && !row.status) {
+        row.status = true
+        this.$notify.warning('您的操作不合法')
+        return
+      }
+      request.put('/admin/update', row).then(res => {
+        if (res.code === '200') {
+          this.$notify.success('操作成功')
+          this.load()
+        } else {
+          this.$notify.error(res.msg)
+        }
+      })
+    },
+```
+
+后端：
+
+`Admin`中定义`private boolean status; `
+
+将状态`status`加入更新：
+
+```xml
+    <!--  更新  -->
+    <update id="updateById">
+        update admin
+        set username = #{username}, phone = #{phone}, email = #{email}, updatetime = #{updatetime}, status = #{status}
+        where id = #{id}
+    </update>
+```
+
+```java
+//	登录`Service`
+public LoginDTO login(LoginRequest loginRequest) {
+...
+if (!adminLoginUAP.isStatus()) {
+	throw new ServiceException("当前用户处于禁用状态，请联系管理员");
+}
+...
+```
+
+# 10、滑块
