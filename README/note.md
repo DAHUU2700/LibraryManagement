@@ -57,7 +57,7 @@ new Vue({
   }
   ```
 
-## 1.1头部
+## 1.1 头部
 
 头部内容基本不会发生变动，因此在`App.vue`中进行书写。
 
@@ -75,7 +75,7 @@ new Vue({
 </div>
 ```
 
-## 1.2左侧菜单
+## 1.2 左侧菜单
 
 左侧数据内容也是基本不会变动，同样书写在`App.vue`中。
 
@@ -124,7 +124,7 @@ new Vue({
 </div>
 ```
 
-## 1.3主体
+## 1.3 主体
 
 ```vue
 <!--   主体数据   -->
@@ -2938,7 +2938,7 @@ Admin getByUsernameAndPassword(LoginRequest loginRequest);
 
 # 8、数据安全
 
-### 8.1 登录界面验证
+## 8.1 登录界面验证
 
 ```html
 <el-form :model="admin" :rules="rules" ref="loginForm"  >
@@ -2988,7 +2988,7 @@ export default {
 
 > **_BugTip_**：`TypeError: Cannot read property 'validate' of undefined at VueComponent.submitForm`；`ref`和 `$refs['']` 的关键字要一致。
 
-### 8.2 退出按钮
+## 8.2 退出按钮
 
 在`Layout`中新添布局：
 
@@ -3022,9 +3022,9 @@ export default {
 > - 原因：浮动的div将子元素button包裹，浏览器无法将其识别为有效宽高的元素，和button本身是没有关系的。
 > - 解决：元素`div`清除浮动`overflow:hidden`。
 
-### 8.3 浏览器数据缓存
+## 8.3 浏览器数据缓存
 
-#### 8.3.1 js-cookie插件
+### 8.3.1 js-cookie插件
 
 同样的，无法在终端中安装，参考：[3.2.1](#axios)
 
@@ -3039,7 +3039,7 @@ export default {
   Cookies.remove('user')  // 删除cookie数据
   ```
 
-#### 8.3.2 请求拦截器
+### 8.3.2 请求拦截器
 
 在`request.js`中设置拦截器，如果得到登录信息，才能进入，不然只能一直在登录页面。
 
@@ -3114,7 +3114,7 @@ import Cookies from 'js-cookie'
   	}
   }
 
-### 8.4 保护密码MD5
+## 8.4 保护密码MD5
 
 防止直接通过后台看见密码；从而设置默认密码，并使用MD5方式加密。
 
@@ -3173,7 +3173,7 @@ import Cookies from 'js-cookie'
        }
    ```
 
-### 8.5 实现404页面
+## 8.5 实现404页面
 
 访问不存在的页面，跳转至404页面。
 
@@ -3211,7 +3211,7 @@ export default {
 </style>
 ```
 
-### 8.6 路由守卫
+## 8.6 路由守卫
 
 在`index.js`中设置路由守卫：
 
@@ -3229,7 +3229,7 @@ router.beforeEach((to, from, next) => {
 
 > 需要注意：在`Login.vue`中，登录方法时，应该先存放Cookie数据再跳转，不然路由守卫会报错。
 
-### 8.7 设置JWT凭证  ※
+## 8.7 设置JWT凭证  ※
 
 如果篡改前端数据，可以突破路由守卫，因此需要在后台设置凭证。
 
@@ -3537,3 +3537,144 @@ public class CorsConfig {
 }
 ```
 
+emmm，这一块有点难，不太理解。
+
+# 9、完善管理员业务
+
+## 9.1 修改密码功能
+
+### 9.1.1 前端
+
+新增按钮：
+
+```vue
+      <!--   操作（编辑&删除&修改密码）   -->
+      <el-table-column label="操作">
+        <template v-slot="scope">
+          <!--     scope.row 就是当前行数据     -->
+          <el-button type="primary" @click="$router.push('/Edit?id=' + scope.row.id)" class="el-icon-setting">编辑</el-button>
+          
+	<el-popconfirm
+              style="margin-left: 8px"
+              title="您确定删除吗？"
+              @confirm = "del(scope.row.id)">
+            <el-button type="danger" slot="reference" class="el-icon-delete">删除</el-button>
+	</el-popconfirm>
+
+          <el-button style="margin-left: 8px" type="warning" @click="handleChangePass(scope.row)">修改密码</el-button>
+
+        </template>
+      </el-table-column>
+```
+
+修改密码弹窗界面：
+
+```vue
+    <!--  修改密码  -->
+    <el-dialog title="修改密码" :visible.sync="dialogFormVisible" width="30%">
+      <el-form :model="form" label-width="100px" ref="newpassRef" :rules="rules">
+        <el-form-item label="新密码" prop="NewPass">
+          <el-input v-model="form.NewPass" autocomplete="off" show-password></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="savaPass">确 定</el-button>
+      </div>
+    </el-dialog>
+```
+
+功能实现：
+
+```javascript
+    //  修改密码功能
+    handleChangePass(row) {
+      this.form = JSON.parse(JSON.stringify(row))
+      this.dialogFormVisible = true
+    },
+        
+    //  保存修改的密码
+    savaPass() {
+      this.$refs['newpassRef'].validate((valid) => {
+        if (valid) {
+          request.put('/admin/password',this.form).then(res => {
+            if (res.code === '200') {
+              this.$notify.success("修改成功")
+                //  修改成功，重新登录
+                if (this.form.id === this.admin.id) {
+                  Cookies.remove('admin')
+                  this.$router.push('/login')
+                }
+            } else {
+              this.$notify.error("修改失败")
+            }
+          })
+        }
+      })
+    },
+```
+
+### 9.1.2 后端
+
+```java
+package com.example.springboot.controller.request;
+
+import lombok.Data;
+
+@Data
+public class PasswordRequest {
+    private String username;
+    private String password;
+    private String newPass;
+}
+```
+
+```java
+    //  修改密码
+    @PutMapping("/password")
+    public Result password(@RequestBody PasswordRequest request) {
+        adminService.changePass(request);
+        return Result.success();
+    }
+```
+
+```java
+    //  修改密码
+    void changePass(PasswordRequest request);
+```
+
+```java
+    //  修改密码
+    @Override
+    public void changePass(PasswordRequest request) {
+        //  对新密码进行加密
+        request.setNewPass(SecurePass(request.getNewPass()));
+        int count = adminMapper.updatePassword(request);
+        if (count <= 0) {
+            throw new ServiceException("修改密码失败");
+        }
+    }
+```
+
+```java
+    //  修改密码
+    int updatePassword(PasswordRequest request);
+```
+
+```java
+    <!--  修改密码  -->
+    <update id="updatePassword">
+        update admin
+        set password = #{newPass}
+        where username = #{username} and password = #{password}
+    </update>
+```
+
+给自己的小建议：当有原封不动的代码给你敲的时候，有问题肯定是你，某一步敲错了。先质疑再质疑，系统不会犯错，人才会——*来自00点44分*！
+
+> **_BugTip_**：`Request method 'POST' not supported`
+>
+> - 当后端代码没有问题的时候，去前端代码看看；老子真想给你一巴掌，看两个小时的后端，网上搜这修那的，煞笔。
+> - `POST`和`PUT`请求不一样噢！
+
+## 9.2 禁用功能
