@@ -3173,3 +3173,367 @@ import Cookies from 'js-cookie'
        }
    ```
 
+### 8.5 实现404页面
+
+访问不存在的页面，跳转至404页面。
+
+在`index.js`中，添加路由：
+
+```js
+    //  404页面
+  {
+    path: '*',
+    component: () => import('@/views/404')
+  }
+```
+
+新建`404.vue`：
+
+```vue
+<template>
+  <div style="text-align: center">
+    <div style="margin-top: 150px; font-size: 100px; ">404</div>
+    <div style="font-size: 50px">未找到页面</div>
+    <div>
+      <el-button type="text" style="margin-top: 20px; font-size: 30px" @click="$router.push('/')">
+      → 返回主页 ←
+      </el-button>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "404"
+}
+</script>
+<style scoped>
+</style>
+```
+
+### 8.6 路由守卫
+
+在`index.js`中设置路由守卫：
+
+```js
+//  路由守卫
+router.beforeEach((to, from, next) => {
+  if (to.path === '/login') next()
+  const admin = Cookies.get("admin")
+  //  强制退回到登录界面
+  if (!admin && to.path !== '/login') return next("/login")
+  //  访问/home的时候，里面存在合法的Cookie，才能放行
+  next()
+})
+```
+
+> 需要注意：在`Login.vue`中，登录方法时，应该先存放Cookie数据再跳转，不然路由守卫会报错。
+
+### 8.7 设置JWT凭证  ※
+
+如果篡改前端数据，可以突破路由守卫，因此需要在后台设置凭证。
+
+- 新建`common\WebConfig`，设置指定controller统一的接口前缀（`/api`），并且设置拦截规则。
+
+```java
+package com.example.springboot.common;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements  WebMvcConfigurer {
+
+    @Autowired
+    JwtInterceptor jwtInterceptor;
+
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        // 指定controller统一的接口前缀（标识）
+        configurer.addPathPrefix("/api", clazz -> clazz.isAnnotationPresent(RestController.class));
+    }
+
+    // 加自定义拦截器JwtInterceptor，设置拦截规则
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(jwtInterceptor).addPathPatterns("/api/**").excludePathPatterns("/api/admin/login");
+        //excludePathPatterns   放开登录页面，登录界面不拦截
+    }
+}
+```
+
+- 修改`request.js`的baseURL，添加接口后缀；
+
+```js
+const request = axios.create({
+    baseURL: 'http://localhost:9090/api',
+    timeout: 5000
+})
+```
+
+```js
+import axios from 'axios'
+import router from '@/router/index'
+import Cookies from 'js-cookie'
+
+const request = axios.create({
+    baseURL: 'http://localhost:9090/api',
+    timeout: 5000
+})
+
+// request 拦截器
+// 可以自请求发送前对请求做一些处理
+// 比如统一加token，对请求参数统一加密
+request.interceptors.request.use(config => {
+    config.headers['Content-Type'] = 'application/json;charset=utf-8';
+
+    //  没有登录信息就不能进主页home
+    //  请求拦截器
+    const adminJson =  Cookies.get('admin')
+    if (adminJson) {
+        // 设置请求头token
+        config.headers['token'] = JSON.parse(adminJson).token;
+    }
+
+    return config
+}, error => {
+    return Promise.reject(error)
+});
+
+// response 拦截器
+// 可以在接口响应后统一处理结果
+request.interceptors.response.use(
+    response => {
+        let res = response.data;
+        // 兼容服务端返回的字符串数据
+        if (typeof res === 'string') {
+            res = res ? JSON.parse(res) : res
+        }
+        if (res.code === '401') {
+            router.push('/login')
+        }
+        return res;
+    },
+    error => {
+        console.log('err' + error) // for debug
+        return Promise.reject(error)
+    }
+)
+
+export default request
+```
+
+- 导入`JWT `依赖：
+
+```properties
+<!--    JWT 凭证    -->
+<dependency>
+	<groupId>com.auth0</groupId>
+	<artifactId>java-jwt</artifactId>
+	<version>3.10.3</version>
+</dependency>
+```
+
+- 新建`utils\TokenUtils`，JWT的工具类：
+
+```java
+package com.example.springboot.utils;
+
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.example.springboot.entity.Admin;
+import com.example.springboot.service.IAdminService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
+
+@Component
+@Slf4j
+public class TokenUtils {
+
+    private static IAdminService staticAdminService;
+
+    @Resource
+    private IAdminService adminService;
+
+    @PostConstruct
+    public void setUserService() {
+        staticAdminService = adminService;
+    }
+
+    /**
+     * 生成token
+     *
+     * @return
+     */
+    public static String genToken(String adminId, String sign) {
+        return JWT.create().withAudience(adminId) // 将 user id 保存到 token 里面,作为载荷
+                .withExpiresAt(DateUtil.offsetHour(new Date(), 2)) // 2小时后token过期
+                .sign(Algorithm.HMAC256(sign)); // 以 password 作为 token 的密钥
+    }
+
+    /**
+     * 获取当前登录的用户信息
+     *
+     * @return user对象
+     *  /admin?token=xxxx
+     */
+    public static Admin getCurrentAdmin() {
+        String token = null;
+        try {
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            token = request.getHeader("token");
+            if (StrUtil.isNotBlank(token)) {
+                token = request.getParameter("token");
+            }
+            if (StrUtil.isBlank(token)) {
+                log.error("获取当前登录的token失败， token: {}", token);
+                return null;
+            }
+            String adminId = JWT.decode(token).getAudience().get(0);
+            return staticAdminService.getById(Integer.valueOf(adminId));
+        } catch (Exception e) {
+            log.error("获取当前登录的管理员信息失败, token={}", token,  e);
+            return null;
+        }
+    }
+}
+```
+
+- 新建`common\JwtInterceptor`，拦截器
+
+```java
+package com.example.springboot.common;
+
+import cn.hutool.core.util.StrUtil;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.example.springboot.entity.Admin;
+import com.example.springboot.exception.ServiceException;
+import com.example.springboot.service.IAdminService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@Component
+@Slf4j
+public class JwtInterceptor implements HandlerInterceptor {
+
+    private static final String ERROR_CODE_401 = "401";
+
+    @Autowired
+    private IAdminService adminService;
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        String token = request.getHeader("token");
+        if (StrUtil.isBlank(token)) {
+            token = request.getParameter("token");
+        }
+
+        // 执行认证
+        if (StrUtil.isBlank(token)) {
+            throw new ServiceException(ERROR_CODE_401, "无token，请重新登录");
+        }
+        // 获取 token 中的adminId
+        String adminId;
+        Admin admin;
+        try {
+            adminId = JWT.decode(token).getAudience().get(0);
+            // 根据token中的userid查询数据库
+            admin = adminService.getById(Integer.parseInt(adminId));
+        } catch (Exception e) {
+            String errMsg = "token验证失败，请重新登录";
+            log.error(errMsg + ", token=" + token, e);
+            throw new ServiceException(ERROR_CODE_401, errMsg);
+        }
+        if (admin == null) {
+            throw new ServiceException(ERROR_CODE_401, "用户不存在，请重新登录");
+        }
+
+        try {
+            // 用户密码加签验证 token
+            JWTVerifier jwtVerifier = JWT.require(Algorithm.HMAC256(admin.getPassword())).build();
+            jwtVerifier.verify(token); // 验证token
+        } catch (JWTVerificationException e) {
+            throw new ServiceException(ERROR_CODE_401, "token验证失败，请重新登录");
+        }
+        return true;
+    }
+}
+```
+
+- token：
+
+在`LoginDTO`中返回token：
+
+```java
+    private String token;
+```
+
+在login业务层，生成token：
+
+```java
+        //  生成token
+        String token = TokenUtils.genToken(String.valueOf(adminLoginUAP.getId()),adminLoginUAP.getPassword());
+        loginDTO.setToken(token);
+```
+
+`Result`中构造方法，传入两个参数的构造方法：
+
+```java
+    //  传入两个参数code + msg
+    public static Result error(String code,String msg) {
+        Result result = new Result();
+        result.setCode(code);
+        result.setMsg(msg);
+        return result;
+    }
+```
+
+- 新建`common\CorsConfig`，设置自定义头配置，相当于解决跨域：
+
+```java
+package com.example.springboot.common;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
+@Configuration
+public class CorsConfig {
+
+    @Bean
+    public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        corsConfiguration.addAllowedOrigin("*"); // 1 设置访问源地址
+        corsConfiguration.addAllowedHeader("*"); // 2 设置访问源请求头
+        corsConfiguration.addAllowedMethod("*"); // 3 设置访问源请求方法
+        source.registerCorsConfiguration("/**", corsConfiguration); 
+// 4 对接口配置跨域设置
+        return new CorsFilter(source);
+    }
+}
+```
+
