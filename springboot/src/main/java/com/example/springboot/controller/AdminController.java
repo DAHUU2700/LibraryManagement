@@ -3,8 +3,10 @@ package com.example.springboot.controller;
 import com.example.springboot.common.Result;
 import com.example.springboot.controller.request.AdminPageRequest;
 import com.example.springboot.controller.request.LoginRequest;
+import com.example.springboot.controller.request.PasswordRequest;
 import com.example.springboot.entity.Admin;
 import com.example.springboot.service.IAdminService;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -63,4 +65,13 @@ public class AdminController {
     public Result login(@RequestBody LoginRequest loginRequest) {
         return Result.success(adminService.login(loginRequest));
     }
+
+    //  修改密码
+    @PutMapping("/password")
+    public Result password(@RequestBody PasswordRequest request) {
+        adminService.changePass(request);
+        return Result.success();
+    }
 }
+
+

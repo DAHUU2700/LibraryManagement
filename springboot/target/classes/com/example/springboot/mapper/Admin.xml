@@ -40,9 +40,9 @@
 
     <!--  更新  -->
     <update id="updateById">
-        update admin set
-            username = #{username},phone = #{phone},email = #{email},updatetime = #{updatetime}
-            where id =#{id}
+        update admin
+        set username = #{username},phone = #{phone},email = #{email},updatetime = #{updatetime}
+        where id =#{id}
     </update>
 
     <!--  删除  -->
@@ -54,6 +54,13 @@
     <select id="getByUsernameAndPassword" resultType="com.example.springboot.entity.Admin">
         select * from admin where username = #{username} and password = #{password};
     </select>
+
+    <!--  修改密码  -->
+    <update id="updatePassword">
+        update admin
+        set password = #{newPass},updatetime = #{updatetime}
+        where username = #{username} and password = #{password}
+    </update>
 
 
 </mapper>

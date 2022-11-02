@@ -2,8 +2,10 @@ package com.example.springboot.mapper;
 
 import com.example.springboot.controller.request.BaseRequest;
 import com.example.springboot.controller.request.LoginRequest;
+import com.example.springboot.controller.request.PasswordRequest;
 import com.example.springboot.entity.Admin;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -28,5 +30,9 @@ public interface AdminMapper {
     void deleteById(Integer id);
 
     //  登录
-    Admin getByUsernameAndPassword(LoginRequest loginRequest);
+//    Admin getByUsernameAndPassword(LoginRequest loginRequest);
+    Admin getByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
+
+    //  修改密码
+    int updatePassword(PasswordRequest request);
 }

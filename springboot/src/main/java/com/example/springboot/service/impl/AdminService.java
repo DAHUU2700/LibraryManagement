@@ -5,6 +5,7 @@ import cn.hutool.crypto.SecureUtil;
 import com.example.springboot.controller.dto.LoginDTO;
 import com.example.springboot.controller.request.BaseRequest;
 import com.example.springboot.controller.request.LoginRequest;
+import com.example.springboot.controller.request.PasswordRequest;
 import com.example.springboot.entity.Admin;
 import com.example.springboot.entity.User;
 import com.example.springboot.exception.ServiceException;
@@ -86,7 +87,7 @@ public class AdminService implements IAdminService {
         //loginRequest.setPassword(SecureUtil.md5(loginRequest.getPassword() + DEFAULT_SALT));
         loginRequest.setPassword(SecurePass(loginRequest.getPassword()));
         //  需要考虑异常！！
-        Admin adminLoginUAP = adminMapper.getByUsernameAndPassword(loginRequest);
+        Admin adminLoginUAP = adminMapper.getByUsernameAndPassword(loginRequest.getUsername(),loginRequest.getPassword());
         if (adminLoginUAP == null) {
             throw new ServiceException("用户名或密码错误");
         }
@@ -97,11 +98,21 @@ public class AdminService implements IAdminService {
         String token = TokenUtils.genToken(String.valueOf(adminLoginUAP.getId()),adminLoginUAP.getPassword());
         loginDTO.setToken(token);
 
-
         return loginDTO;
     }
 
-    //  封装加密
+    //  修改密码
+    @Override
+    public void changePass(PasswordRequest request) {
+        //  对新密码进行加密
+        request.setNewPass(SecurePass(request.getNewPass()));
+        int count = adminMapper.updatePassword(request);
+        if (count <= 0) {
+            throw new ServiceException("修改密码失败");
+        }
+    }
+
+    //  封装-加密
     public String SecurePass(String password) {
         return SecureUtil.md5(password + DEFAULT_SALT);
     }
