@@ -10,6 +10,7 @@ import com.example.springboot.entity.User;
 import com.example.springboot.exception.ServiceException;
 import com.example.springboot.mapper.AdminMapper;
 import com.example.springboot.service.IAdminService;
+import com.example.springboot.utils.TokenUtils;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +92,12 @@ public class AdminService implements IAdminService {
         }
         LoginDTO loginDTO = new LoginDTO();
         BeanUtils.copyProperties(adminLoginUAP,loginDTO);
+
+        //  生成token
+        String token = TokenUtils.genToken(String.valueOf(adminLoginUAP.getId()),adminLoginUAP.getPassword());
+        loginDTO.setToken(token);
+
+
         return loginDTO;
     }
 

@@ -3,7 +3,7 @@ import router from '@/router/index'
 import Cookies from 'js-cookie'
 
 const request = axios.create({
-    baseURL: 'http://localhost:9090',
+    baseURL: 'http://localhost:9090/api',
     timeout: 5000
 })
 
@@ -15,12 +15,12 @@ request.interceptors.request.use(config => {
 
     //  没有登录信息就不能进主页home
     //  请求拦截器
-    const admin =  Cookies.get('admin')
-    if (!admin) {
-        router.push('/login')
+    const adminJson =  Cookies.get('admin')
+    if (adminJson) {
+        // 设置请求头token
+        config.headers['token'] = JSON.parse(adminJson).token;
     }
 
-    // config.headers['token'] = user.token;  // 设置请求头
     return config
 }, error => {
     return Promise.reject(error)
@@ -34,6 +34,9 @@ request.interceptors.response.use(
         // 兼容服务端返回的字符串数据
         if (typeof res === 'string') {
             res = res ? JSON.parse(res) : res
+        }
+        if (res.code === '401') {
+            router.push('/login')
         }
         return res;
     },

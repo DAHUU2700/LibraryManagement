@@ -51,10 +51,12 @@ export default {
               request.post('/admin/login', this.admin).then(res => {
                 if (res.code === '200') {
                   this.$notify.success("登录成功")
-                  this.$router.push('/')
+                  //  先存放Cookie数据
                   if (res.data !== null) {
                     Cookies.set('admin',JSON.stringify(res.data))
                   }
+                  //  再跳转
+                  this.$router.push('/')
                 } else {
                   this.$notify.error(res.msg)
                 }

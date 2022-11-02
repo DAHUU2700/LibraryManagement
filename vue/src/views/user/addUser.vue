@@ -13,7 +13,7 @@
       <el-input v-model="form.phone" placeholder="请输入联系方式"></el-input>
     </el-form-item>
     <el-form-item label="性别" prop="sex">
-      <el-radio v-model="form.sex" aria-checked="男">男</el-radio>
+      <el-radio v-model="form.sex" label="男">男</el-radio>
       <el-radio v-model="form.sex" label="女">女</el-radio>
     </el-form-item>
     <el-form-item label="地址" prop="address">
@@ -60,7 +60,9 @@ export default {
     };
 
     return {
-      form: {},
+      form: {
+        sex: '男'
+      },
 
       ruleForm: {
         name: '',

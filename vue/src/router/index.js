@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Layout from '@/views/Layout'
+import Cookies from "js-cookie";
 
 Vue.use(VueRouter)
 
@@ -66,6 +67,12 @@ const routes = [
       }
 
     ]
+  },
+
+    //  404页面
+  {
+    path: '*',
+    component: () => import('@/views/404')
   }
 ]
 
@@ -73,6 +80,16 @@ const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
   routes
+})
+
+//  路由守卫
+router.beforeEach((to, from, next) => {
+  if (to.path === '/login') next()
+  const admin = Cookies.get("admin")
+  //  强制退回到登录界面
+  if (!admin && to.path !== '/login') return next("/login")
+  //  访问/home的时候，里面存在合法的Cookie，才能放行
+  next()
 })
 
 export default router

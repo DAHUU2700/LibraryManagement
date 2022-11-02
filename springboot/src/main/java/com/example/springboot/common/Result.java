@@ -39,4 +39,12 @@ public class Result {
         return result;
     }
 
+    //  传入两个参数code + msg
+    public static Result error(String code,String msg) {
+        Result result = new Result();
+        result.setCode(code);
+        result.setMsg(msg);
+        return result;
+    }
+
 }
