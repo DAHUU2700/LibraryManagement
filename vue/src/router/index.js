@@ -31,40 +31,37 @@ const routes = [
       },
 
       //  用户管理user路由
-
       {
-        path: 'userList',
-        name: 'UserList',
-        component: () => import('@/views/user/User')
+        path: 'userList', name: 'UserList', component: () => import('@/views/user/User')
       },
       {
-        path: 'addUser',
-        name: 'addUser',
-        component: () => import('@/views/user/addUser')
+        path: 'addUser', name: 'addUser', component: () => import('@/views/user/addUser')
       },
       {
-        path: 'editUser',
-        name: 'editUser',
-        component: () => import('@/views/user/editUser')
+        path: 'editUser', name: 'editUser', component: () => import('@/views/user/editUser')
       },
 
       //  管理员admin路由
+      {
+        path: 'adminList', name: 'AdminList', component: () => import('@/views/admin/Admin')
+      },
+      {
+        path: 'Add', name: 'Add', component: () => import('@/views/admin/Add')
+      },
+      {
+        path: 'Edit', name: 'Edit', component: () => import('@/views/admin/Edit')
+      },
 
+      //  分类category路由
       {
-        path: 'adminList',
-        name: 'AdminList',
-        component: () => import('@/views/admin/Admin')
+        path: 'categoryList', name: 'CategoryList', component: () => import('@/views/category/List')
       },
       {
-        path: 'Add',
-        name: 'Add',
-        component: () => import('@/views/admin/Add')
+        path: 'categoryAdd', name: 'CategoryAdd', component: () => import('@/views/category/Add')
       },
       {
-        path: 'Edit',
-        name: 'Edit',
-        component: () => import('@/views/admin/Edit')
-      }
+        path: 'categoryEdit', name: 'CategoryEdit', component: () => import('@/views/category/Edit')
+      },
 
     ]
   },

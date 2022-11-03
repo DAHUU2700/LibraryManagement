@@ -60,6 +60,15 @@
             <el-menu-item index="/adminList">管理员列表</el-menu-item>
           </el-submenu>
 
+          <el-submenu index="category">
+            <template slot="title">
+              <i class="el-icon-s-order"></i>
+              <span>图书分类管理</span>
+            </template>
+            <el-menu-item index="/categoryAdd">添加分类</el-menu-item>
+            <el-menu-item index="/categoryList">分类列表</el-menu-item>
+          </el-submenu>
+
           <el-menu-item index="aboutMore" disabled>
             <i class="el-icon-question"></i>
             <span>项目详情</span>
