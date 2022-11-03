@@ -17,6 +17,7 @@ import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -56,9 +57,13 @@ public class AdminService implements IAdminService {
             admin.setPassword(DEFAULT_PASS);
         }
         //  md5加密
-        //admin.setPassword(SecureUtil.md5(admin.getPassword() + DEFAULT_SALT));
         admin.setPassword(SecurePass(admin.getPassword()));
-        adminMapper.sava(admin);
+        try {
+            adminMapper.sava(admin);
+        } catch (DuplicateKeyException e) {
+            log.error("数据插入失败，username:{}",admin.getUsername(), e);
+            throw new ServiceException("用户名重复");
+        }
     }
 
     //  根据id查询
@@ -83,24 +88,32 @@ public class AdminService implements IAdminService {
     //  登录
     @Override
     public LoginDTO login(LoginRequest loginRequest) {
-        //  登录的时候，也需要加密，
-        //loginRequest.setPassword(SecureUtil.md5(loginRequest.getPassword() + DEFAULT_SALT));
-        loginRequest.setPassword(SecurePass(loginRequest.getPassword()));
-        //  需要考虑异常！！
-        Admin adminLoginUAP = adminMapper.getByUsernameAndPassword(loginRequest.getUsername(),loginRequest.getPassword());
-        if (adminLoginUAP == null) {
+        Admin admin = null;
+        //  考虑异常！！
+        try {
+            admin = adminMapper.getByUsername(loginRequest.getUsername());
+        } catch (Exception e) {
+            log.error("根据用户名{} 查询出错", loginRequest.getUsername());
+            throw new ServiceException("用户名错误");
+        }
+        if (admin == null) {
             throw new ServiceException("用户名或密码错误");
         }
-        if (!adminLoginUAP.isStatus()) {
+
+        // 判断密码是否合法
+        String securePass = SecurePass(loginRequest.getPassword());
+        if (!securePass.equals(admin.getPassword())) {
+            throw new ServiceException("用户名或密码错误");
+        }
+        if (!admin.isStatus()) {
             throw new ServiceException("当前用户处于禁用状态，请联系管理员");
         }
         LoginDTO loginDTO = new LoginDTO();
-        BeanUtils.copyProperties(adminLoginUAP,loginDTO);
+        BeanUtils.copyProperties(admin, loginDTO);
 
-        //  生成token
-        String token = TokenUtils.genToken(String.valueOf(adminLoginUAP.getId()),adminLoginUAP.getPassword());
+        // 生成token
+        String token = TokenUtils.genToken(String.valueOf(admin.getId()), admin.getPassword());
         loginDTO.setToken(token);
-
         return loginDTO;
     }
 

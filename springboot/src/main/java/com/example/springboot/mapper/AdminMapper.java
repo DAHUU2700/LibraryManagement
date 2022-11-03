@@ -29,10 +29,13 @@ public interface AdminMapper {
     //  删除
     void deleteById(Integer id);
 
-    //  登录
-//    Admin getByUsernameAndPassword(LoginRequest loginRequest);
+    //  登录(根据username和password去查询)
+    //    Admin getByUsernameAndPassword(LoginRequest loginRequest);
     Admin getByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
 
     //  修改密码
     int updatePassword(PasswordRequest request);
+
+    //  登录(根据username去查询)
+    Admin getByUsername(String username);
 }
