@@ -3740,4 +3740,103 @@ if (!adminLoginUAP.isStatus()) {
 ...
 ```
 
-# 10、滑块
+# 10、滑块验证
+
+开源插件地址：https://gitee.com/monoplasty/vue-monoplasty-slide-verify
+
+安装：
+
+```sh
+npm i vue-monoplasty-slide-verify -S
+```
+
+导入至`main.js`：
+
+```js
+import SlideVerify from 'vue-monoplasty-slide-verify';
+
+Vue.use(SlideVerify);
+```
+
+`Login.vue`进行设置：
+
+```vue
+    <el-card class="cover" v-if="loginAdmin.id">
+      <slide-verify :l="42"
+                    :r="10"
+                    :w="310"
+                    :h="155"
+                    :imgs="imgs"
+                    :accuracy="6"
+                    slider-text="向右滑动"
+                    @success="onSuccess"
+                    @fail="onFail"
+                    @refresh="onRefresh"
+      ></slide-verify>
+    </el-card>>
+```
+
+```javascript
+import img1 from '@/assets/slide/img1.jpg';
+import img2 from '@/assets/slide/img2.jpg';
+import img3 from '@/assets/slide/img3.jpg';
+
+export default {
+        name: 'App',
+        data(){
+            return {
+      			loginAdmin: {},
+      			imgs: [img1, img2, img3,],
+                ...
+            }
+        },
+          methods: {
+        login() {
+          this.$refs['loginForm'].validate((valid) => {
+            if (valid) {
+              request.post('/admin/login', this.admin).then(res => {
+                if (res.code === '200') {
+                  //  滑块组件
+                  this.loginAdmin = res.data
+                } else {
+                  this.$notify.error(res.msg)
+                }
+              })
+            }
+          })
+        },
+        //  滑块
+        onSuccess(){
+          //  先存放Cookie数据
+          Cookies.set('admin',JSON.stringify(this.loginAdmin))
+          this.$notify.success("登录成功")
+          //  再跳转
+          this.$router.push('/')
+        },
+        onFail(){
+          console.log('onFail')
+        },
+        onRefresh(){
+          console.log('refresh')
+        }
+      },
+```
+
+```css
+<style scoped>
+.cover {
+  width: fit-content;
+  background-color: white;
+  position: absolute;
+  top:50%;
+  left:50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+</style>
+```
+
+> **_BugTip_**：`ERR_TIMED_OUT`
+>
+> - 连接超时了，发现图片无法加载，导致报错。根据开源地址中的`App.vue`设置imgs即可（绑定`:imgs="imgs"`；导入；`imgs: []`）。
+
