@@ -3920,3 +3920,644 @@ export default {
 >
 > - 连接超时了，发现图片无法加载，导致报错。根据开源地址中的`App.vue`设置imgs即可（绑定`:imgs="imgs"`；导入；`imgs: []`）。
 
+# 11、图书分类管理(clone)
+
+## 11.1 SQL
+
+新建表`category`：
+
+```sql
+SET FOREIGN_KEY_CHECKS=0;
+
+DROP TABLE IF EXISTS `category`;
+CREATE TABLE `category` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '分类名称',
+  `remark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '备注',
+  `pid` int(11) DEFAULT NULL COMMENT '父级id',
+  `createtime` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatetime` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## 11.2 后端
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springboot.mapper.CategoryMapper">
+
+    <!--  查询所有  -->
+    <select id="list" resultType="com.example.springboot.entity.Category">
+        select * from category
+        order by id desc;
+    </select>
+
+    <!--  条件查询  -->
+    <resultMap id="categoryMap" type="com.example.springboot.entity.Category">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="remark" property="remark" />
+        <result column="pid" property="pid" />
+        <result column="createtime" property="createtime" />
+        <result column="updatetime" property="updatetime" />
+        <collection property="children" ofType="com.example.springboot.entity.Category" column="{id=id, name1=queryName}" select="selectByPid" />
+    </resultMap>
+
+    <!--  根据pid查询  -->
+    <select id="selectByPid" resultType="com.example.springboot.entity.Category">
+        select * from category where pid = #{id}
+        <if test="name1 != null and name1 != ''">
+            and name like concat('%', #{name1}, '%')
+        </if>
+        order by id desc
+    </select>
+
+    <select id="listByCondition" resultMap="categoryMap">
+        -- 自关联
+        select c1.*,'${name}' as queryName from category c1
+        left join category c2
+        on c1.id = c2.pid
+        <where>
+            isnull(c1.pid)
+            <if test="name != null and name != ''">
+                and (c1.name like concat('%', #{name}, '%') or c2.name like concat('%', #{name}, '%'))
+            </if>
+        </where>
+        group by c1.id
+        order by c1.id desc
+    </select>
+
+    <!--  添加  -->
+    <insert id="save">
+        insert into category(name,remark,pid)
+        values (#{name},#{remark},#{pid})
+    </insert>
+
+    <!--  修改(根据id查询)  -->
+    <select id="getById" resultType="com.example.springboot.entity.Category">
+        select * from category where id = #{id}
+    </select>
+
+    <!--  更新  -->
+    <update id="updateById">
+        update category
+        set name = #{name}, remark = #{remark}, updatetime = #{updatetime}
+        where id = #{id}
+    </update>
+
+    <!--  删除  -->
+    <delete id="deleteById">
+        delete from category where id = #{id}
+    </delete>
+
+</mapper>
+```
+
+在mapper.xml中，需要注意的几个点：
+
+1. 条件查询时为自关联查询，在`<resultMap></resultMap>`标签中，`column`填写的是数据库的属性值；`property`填写的是Java中的属性值。
+2. 添加时，别忘记加上`pid`。
+
+```java
+package com.example.springboot.mapper;
+
+import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.entity.Category;
+import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
+
+@Mapper
+public interface CategoryMapper {
+
+    //  查询所有
+    List<Category> list();
+
+    //  条件查询（多态的方式）
+    List<Category> listByCondition(BaseRequest baseRequest);
+
+    //  添加
+    void save(Category category);
+
+    //  根据id查询
+    Category getById(Integer id);
+
+    //  更新
+    void updateById(Category category);
+
+    //  删除
+    void deleteById(Integer id);
+}
+```
+
+```java
+package com.example.springboot.service;
+
+import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.entity.Admin;
+import com.example.springboot.entity.Category;
+import com.github.pagehelper.PageInfo;
+
+import java.util.List;
+
+public interface ICategoryService {
+    //  查询所有
+    List<Category> list();
+
+    //  分页
+    PageInfo<Category> page(BaseRequest baseRequest);
+
+    //  添加
+    void save(Category category);
+
+    //  根据id查询
+    Category getById(Integer id);
+
+    //  更新
+    void update(Category category);
+
+    //  删除
+    void deleteById(Integer id);
+}
+```
+
+```java
+package com.example.springboot.service.impl;
+
+import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.entity.Category;
+import com.example.springboot.mapper.CategoryMapper;
+import com.example.springboot.service.ICategoryService;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.time.LocalDate;
+import java.util.List;
+
+@Service
+@Slf4j
+public class CategoryService implements ICategoryService {
+    @Resource
+    CategoryMapper categoryMapper;
+
+    //  查询所有
+    @Override
+    public List<Category> list() {
+        return categoryMapper.list();
+    }
+
+    //  根据条件查询
+    @Override
+    public PageInfo<Category> page(BaseRequest baseRequest) {
+        PageHelper.startPage(baseRequest.getPageNum(), baseRequest.getPageSize());
+        // 自关联查询
+        List<Category> categories = categoryMapper.listByCondition(baseRequest);
+        return new PageInfo<>(categories);
+    }
+
+    //  新增
+    @Override
+    public void save(Category category) {
+        categoryMapper.save(category);
+    }
+
+    //  根据id查询
+    @Override
+    public Category getById(Integer id) {
+        return categoryMapper.getById(id);
+    }
+
+    //  更新
+    @Override
+    public void update(Category category) {
+        category.setUpdatetime(LocalDate.now());
+        categoryMapper.updateById(category);
+    }
+
+    //  删除（根据id删除）
+    @Override
+    public void deleteById(Integer id) {
+        categoryMapper.deleteById(id);
+    }
+}
+```
+
+```java
+package com.example.springboot.entity;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+public class Category {
+    private Integer id;
+    private String name;
+    private String remark;
+    private Integer pid;
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private LocalDate createtime;
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private LocalDate updatetime;
+
+    private List<Category> children;
+    //	与二级分类相关，默认为childen。
+}
+```
+
+```java
+package com.example.springboot.controller.request;
+import lombok.Data;
+
+@Data
+public class CategoryPageRequest extends BaseRequest{
+    private String name;
+}
+```
+
+```java
+package com.example.springboot.controller;
+
+import com.example.springboot.common.Result;
+import com.example.springboot.controller.request.CategoryPageRequest;
+import com.example.springboot.entity.Category;
+import com.example.springboot.service.ICategoryService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@CrossOrigin
+@RestController
+@RequestMapping("/category")
+public class CategoryController {
+
+    @Autowired
+    ICategoryService categoryService;
+
+    //  添加
+    @PostMapping("/save")
+    public Result save(@RequestBody Category category) {
+        categoryService.save(category);
+        return Result.success();
+    }
+
+    //  更新
+    @PutMapping("/update")
+    public Result update(@RequestBody Category category) {
+        categoryService.update(category);
+        return Result.success();
+    }
+
+    //  删除（根据id）
+    @DeleteMapping("/delete/{id}")
+    public Result delete(@PathVariable Integer id) {
+        categoryService.deleteById(id);
+        return Result.success();
+    }
+
+    //  根据id查询
+    @GetMapping("/{id}")
+    public Result getById(@PathVariable Integer id) {
+        Category category = categoryService.getById(id);
+        return Result.success(category);
+    }
+
+    //  查询所有
+    @GetMapping("/list")
+    public Result list() {
+        List<Category> list = categoryService.list();
+        return Result.success(list);
+    }
+
+    //  根据条件查询
+    @GetMapping("/page")
+    public Result page(CategoryPageRequest pageRequest) {
+        return Result.success(categoryService.page(pageRequest));
+    }
+}
+```
+
+## 11.2 前端
+
+在`Layout`页面添加侧边栏：
+
+```java
+<el-submenu index="category">
+	<template slot="title">
+		<i class="el-icon-s-order"></i>
+			<span>图书分类管理</span>
+</template>
+	<el-menu-item index="/categoryAdd">添加分类</el-menu-item>
+	<el-menu-item index="/categoryList">分类列表</el-menu-item>
+</el-submenu>
+```
+
+新建`Category`中的`Add`、`Edit`、`List`页面：
+
+```vue
+<template>
+  <div style="margin: 20px;width: 300px">
+    <h2 style="margin-bottom: 30px">新增分类</h2>
+    <el-form :rules="rules" ref="ruleForm" :model="form" label-width="80px">
+      <el-form-item label="名称" prop="name">
+        <el-input v-model="form.name" placeholder="请输入名称"></el-input>
+      </el-form-item>
+      <el-form-item label="备注" prop="remark">
+        <el-input v-model="form.remark" placeholder="请输入备注"></el-input>
+      </el-form-item>
+    </el-form>
+
+    <div style="text-align: center; margin-top: 30px">
+      <el-button type="primary" @click="save" size="medium">提交</el-button>
+      <el-button type="warning" @click="resetForm('ruleForm')">重置</el-button>
+    </div>
+  </div>
+</template>
+
+<script>
+import request from "@/utils/request";
+
+export default {
+  name: 'AddCategory',
+  data() {
+    return {
+      form: {},
+      ruleForm: {
+        username: '',
+        phone: '',
+        email: ''
+      },
+      rules: {
+        name: [
+          { required: true, message: '请输入分类名称', trigger: 'blur'}
+        ]
+      }
+    }
+  },
+  methods: {
+    save() {
+      this.$refs['ruleForm'].validate((valid) => {
+        if (valid) {
+          request.post('/category/save', this.form).then(res => {
+            if (res.code === '200') {
+              this.$notify.success('新增成功')
+              this.$refs['ruleForm'].resetFields()
+            } else {
+              this.$notify.error(res.msg)
+            }
+          })
+        }
+      })
+    },
+    resetForm(ruleForm) {
+      this.$refs['ruleForm'].resetFields();
+    }
+  }
+}
+
+</script>
+```
+
+```vue
+<template>
+  <div style="margin: 20px;width: 300px">
+    <h2 style="margin-bottom: 30px">编辑分类</h2>
+    <el-form :rules="rules" ref="ruleForm" :model="form" label-width="80px">
+      <el-form-item label="名称" prop="name">
+        <el-input v-model="form.name" placeholder="请输入名称"></el-input>
+      </el-form-item>
+      <el-form-item label="备注" prop="remark">
+        <el-input v-model="form.remark" placeholder="请输入备注"></el-input>
+      </el-form-item>
+    </el-form>
+
+    <div style="text-align: center; margin-top: 30px">
+      <el-button type="primary" @click="save">提交</el-button>
+    </div>
+  </div>
+</template>
+
+<script>
+import request from "@/utils/request";
+
+export default {
+  name: 'EditCategory',
+  data() {
+    return {
+      form: {},
+      rules: {
+        name: [
+          { required: true, message: '请输入分类名称', trigger: 'blur'}
+        ]
+      }
+    }
+  },
+  created() {
+    const id = this.$route.query.id
+    request.get("/category/" + id).then(res => {
+      this.form = res.data
+    })
+  },
+  methods: {
+    save() {
+      request.put('/category/update', this.form).then(res => {
+        if (res.code === '200') {
+          this.$notify.success('更新成功')
+          this.$router.push("/categoryList")
+        } else {
+          this.$notify.error(res.msg)
+        }
+      })
+    }
+  }
+}
+
+</script>
+```
+
+```java
+<template>
+  <div>
+    <!--    搜索表单-->
+    <div style="margin-bottom: 10px;margin-top: 10px;margin-left: 10px">
+      <el-input style="width: 240px" placeholder="请输入分类名称" v-model="params.name"></el-input>
+      <el-button style="margin-left: 8px" type="primary" @click="load"><i class="el-icon-search"></i> 搜索</el-button>
+      <el-button style="margin-left: 6px" type="warning" @click="reset"><i class="el-icon-refresh"></i> 重置</el-button>
+    </div>
+
+    <el-table :data="tableData" stripe row-key="id"  default-expand-all>
+      <el-table-column prop="id" label="编号" width="100px"></el-table-column>
+      <el-table-column prop="name" label="名称" width="200px"></el-table-column>
+      <el-table-column prop="remark" label="备注" width="300px"></el-table-column>
+      <el-table-column prop="createtime" label="创建时间" ></el-table-column>
+      <el-table-column prop="updatetime" label="更新时间" ></el-table-column>
+      <el-table-column label="操作" width="500px">
+        <template v-slot="scope">
+<!--          scope.row 就是当前行数据-->
+          <el-button type="success" v-if="!scope.row.pid" @click="handleAdd(scope.row)">添加二级分类</el-button>
+          <el-button type="primary" @click="$router.push('/categoryEdit?id=' + scope.row.id)">编辑</el-button>
+          <el-popconfirm
+              style= "margin-left: 8px"
+              title="您确定删除这行数据吗？"
+              @confirm="del(scope.row.id)"
+          >
+            <el-button type="danger" slot="reference">删除</el-button>
+
+          </el-popconfirm>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!--    分页-->
+    <div style="margin-top: 20px">
+      <el-pagination
+          background
+          :current-page="params.pageNum"
+          :page-size="params.pageSize"
+          layout="prev, pager, next"
+          @current-change="handleCurrentChange"
+          :total="total">
+      </el-pagination>
+    </div>
+
+    <el-dialog title="添加二级分类" :visible.sync="dialogFormVisible" width="30%">
+      <el-form :model="form" label-width="100px" ref="ruleForm" :rules="rules" style="width: 85%">
+        <el-form-item label="分类名称" prop="name">
+          <el-input v-model="form.name" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="分类备注" prop="remark">
+          <el-input v-model="form.remark" autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="save">确 定</el-button>
+      </div>
+    </el-dialog>
+    
+  </div>
+</template>
+
+<script>
+import request from "@/utils/request";
+import Cookies from 'js-cookie'
+
+export default {
+  name: 'CategoryList',
+  data() {
+    return {
+      admin: Cookies.get('admin') ? JSON.parse(Cookies.get('admin')) : {},
+      tableData: [],
+      total: 0,
+      dialogFormVisible: false,
+      form: {},
+      pid: null,
+      params: {
+        pageNum: 1,
+        pageSize: 10,
+        name: '',
+      },
+      rules: {
+        name: [
+          {required: true, message: '请输入分类名称', trigger: 'blur'}
+        ]
+      }
+    }
+  },
+  created() {
+    this.load()
+  },
+  methods: {
+    load() {
+      request.get('/category/page', {
+        params: this.params
+      }).then(res => {
+        if (res.code === '200') {
+          this.tableData = res.data.list
+          this.total = res.data.total
+        }
+      })
+    },
+    reset() {
+      this.params = {
+        pageNum: 1,
+        pageSize: 10,
+        name: ''
+      }
+      this.load()
+    },
+    handleCurrentChange(pageNum) {
+      // 点击分页按钮触发分页
+      this.params.pageNum = pageNum
+      this.load()
+    },
+    del(id) {
+      request.delete("/category/delete/" + id).then(res => {
+        if (res.code === '200') {
+          this.$notify.success('删除成功')
+          this.load()
+        } else {
+          this.$notify.error(res.msg)
+        }
+      })
+    },
+    handleAdd(row) {
+      // 将当前行的id作为二级分类的pid
+      this.pid = row.id
+      this.dialogFormVisible = true
+    },
+    save() {
+      this.$refs['ruleForm'].validate((valid) => {
+        if (valid) {
+          // 给二级分类赋值 pid
+          this.form.pid = this.pid
+          request.post('/category/save', this.form).then(res => {
+            if (res.code === '200') {
+              this.$notify.success('新增二级分类成功')
+              this.$refs['ruleForm'].resetFields()
+              this.dialogFormVisible = false
+              this.load()
+            } else {
+              this.$notify.error(res.msg)
+            }
+          })
+        }
+      })
+    }
+  }
+}
+</script>
+<style scoped>
+</style>
+```
+
+与之前的页面，大同小异；但需要注意的新东西为：
+
+- 树形数据：支持树类型的数据的显示。当 row 中包含 `children` 字段时，被视为树形数据。渲染树形数据时，必须要指定 `row-key`；
+
+  支持子节点数据异步加载。设置 Table 的 `lazy` 属性为 true 与加载函数 `load` ；
+
+  通过指定 row 中的 `hasChildren` 字段来指定哪些行是包含子节点。`children` 与 `hasChildren` 都可以通过 `tree-props` 配置。
+
+设置路由`index.js`：
+
+```js
+//  分类category路由
+{ path: 'categoryList', name: 'CategoryList', component: () => import('@/views/category/List') },
+    
+{ path: 'categoryAdd', name: 'CategoryAdd', component: () => import('@/views/category/Add') },
+    
+{ path: 'categoryEdit', name: 'CategoryEdit', component: () => import('@/views/category/Edit') },
+```
+
+BUG：==测试的时候遇见一个小bug：在**管理员**和**用户页**面编辑修改电话号码时，应该要验证一下0.0==
