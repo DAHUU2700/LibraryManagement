@@ -1,7 +1,7 @@
 <template>
   <div style="margin: 20px;width: 300px">
     <h2 style="margin-bottom: 30px">编辑用户</h2>
-  <el-form label-width="80px" ref="form" :model="form">
+  <el-form label-width="80px" ref="form" :model="form" :rules="rules">
     <el-form-item label="会员卡号" prop="name">
       <el-input v-model="form.username" disabled></el-input>
     </el-form-item>
@@ -38,8 +38,20 @@ import request from "@/utils/request";
 export default {
   name: "addUser",
   data() {
+
+    //  验证联系方式
+    const checkPhone = (rule, value, callback) => {
+      if (!/^[1][3,4,5,6,7,8,9][0-9]{9}$/.test(value)) {
+        callback(new Error('请输入合法的手机号'));
+      }
+      callback()
+    };
+
     return {
-      form: {}
+      form: {},
+      rules: {
+        phone: [ { validator: checkPhone, trigger: 'blur' } ]
+      }
     }
   },
   created() {

@@ -69,6 +69,15 @@
             <el-menu-item index="/categoryList">分类列表</el-menu-item>
           </el-submenu>
 
+          <el-submenu index="book">
+            <template slot="title">
+              <i class="el-icon-notebook-2"></i>
+              <span>图书管理</span>
+            </template>
+            <el-menu-item index="/bookAdd">添加图书</el-menu-item>
+            <el-menu-item index="/bookList">图书列表</el-menu-item>
+          </el-submenu>
+
           <el-menu-item index="aboutMore" disabled>
             <i class="el-icon-question"></i>
             <span>项目详情</span>

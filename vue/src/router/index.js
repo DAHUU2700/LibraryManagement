@@ -63,6 +63,18 @@ const routes = [
         path: 'categoryEdit', name: 'CategoryEdit', component: () => import('@/views/category/Edit')
       },
 
+      //  图书book路由
+      {
+        path: 'bookList', name: 'BookList', component: () => import('@/views/book/List')
+      },
+      {
+        path: 'bookAdd', name: 'BookAdd', component: () => import('@/views/book/Add')
+      },
+      {
+        path: 'bookEdit', name: 'BookEdit', component: () => import('@/views/book/Edit')
+      },
+
+
     ]
   },
 

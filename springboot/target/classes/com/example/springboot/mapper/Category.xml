@@ -31,6 +31,7 @@
     </select>
 
     <select id="listByCondition" resultMap="categoryMap">
+        -- 自关联
         select c1.*,'${name}' as queryName from category c1
         left join category c2
         on c1.id = c2.pid

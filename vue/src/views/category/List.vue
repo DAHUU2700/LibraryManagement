@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!--    搜索表单-->
+    <!--    搜索表单  -->
     <div style="margin-bottom: 10px;margin-top: 10px;margin-left: 10px">
       <el-input style="width: 240px" placeholder="请输入分类名称" v-model="params.name"></el-input>
       <el-button style="margin-left: 8px" type="primary" @click="load"><i class="el-icon-search"></i> 搜索</el-button>
