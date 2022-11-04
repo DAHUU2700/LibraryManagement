@@ -4560,4 +4560,256 @@ export default {
 { path: 'categoryEdit', name: 'CategoryEdit', component: () => import('@/views/category/Edit') },
 ```
 
-BUG：==测试的时候遇见一个小bug：在**管理员**和**用户页**面编辑修改电话号码时，应该要验证一下0.0==
+BUG：==测试的时候遇见一个小bug：在编辑 -> 修改电话号码时，应该要验证一下0.0==
+
+# 12、图书管理
+
+## 12.1 SQL
+
+新建`book`表
+
+```sql
+SET FOREIGN_KEY_CHECKS=0;
+-- ----------------------------
+-- Table structure for book
+-- ----------------------------
+DROP TABLE IF EXISTS `book`;
+CREATE TABLE `book` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '书名',
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '描述',
+  `publish_date` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '出版日期',
+  `publisher` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '出版社',
+  `author` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '作者',
+  `category` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '分类',
+  `cover` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '封面',
+  `book_no` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标准码',
+  `createtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updatetime` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## 12.2 后端
+
+后端代码基本相同；与分类管理部分相同，只有基础的增删改查的功能，所以Copy即可。
+
+以后先写实体类，要啥加啥。
+
+```java
+package com.example.springboot.entity;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+public class Book {
+    private Integer id;
+    private String name;
+    private String description;
+    private String author;
+    private String publishDate;
+    private String publisher;
+    private String category;
+    private String cover;
+    private String bookNo;
+
+    private List<String> categories;
+
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private LocalDate createtime;
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private LocalDate updatetime;
+}
+
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springboot.mapper.BookMapper">
+
+    <!--  查询所有  -->
+    <select id="list" resultType="com.example.springboot.entity.Book">
+        select * from book
+        order by id desc;
+    </select>
+
+    <!--  条件查询  -->
+    <select id="listByCondition" resultType="com.example.springboot.entity.Book">
+        select * from book
+        <where>
+            <if test="name != null and name != ''">
+                name like concat('%', #{name}, '%')
+            </if>
+            <if test="bookNo != null and bookNo != ''">
+                and book_no = #{bookNo}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <!--  添加  -->
+    <insert id="save">
+        insert into book(name,description,author,publish_date,publisher,category,cover,book_no)
+        values (#{name},#{description},#{author},#{publishDate},#{publisher},#{category},#{cover},#{bookNo})
+    </insert>
+
+    <!--  修改(根据id查询)  -->
+    <select id="getById" resultType="com.example.springboot.entity.Book">
+        select * from book where id = #{id}
+    </select>
+
+    <!--  更新  -->
+    <update id="updateById">
+        update book
+        set name = #{name},description = #{description},author=#{author},publish_date=#{publishDate},
+            publisher=#{publisher},category=#{category},book_no=#{bookNo},cover = #{cover},
+            updatetime = #{updatetime}
+        where id = #{id}
+    </update>
+
+    <!--  删除  -->
+    <delete id="deleteById">
+        delete from book where id = #{id}
+    </delete>
+
+</mapper>
+```
+
+- 注意：这次在创建表的时候，创建了带有`_`的字段，如：`publish_date`，因此在写sql语句时需要注意`#{}`中的命名方式要改为**驼峰命名**；并且需要在`yml`文件中配置：
+
+  ```properties
+  # 开启数据库字段下划线转驼峰
+  mybatis:
+      map-underscore-to-camel-case: true
+  ```
+
+```java
+package com.example.springboot.service.impl;
+
+import cn.hutool.core.collection.CollUtil;
+import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.entity.Book;
+import com.example.springboot.mapper.BookMapper;
+import com.example.springboot.service.IBookService;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.time.LocalDate;
+import java.util.List;
+
+
+@Service
+@Slf4j
+public class BookService implements IBookService {
+
+    @Resource
+    BookMapper bookMapper;
+
+    //  查询所有
+    @Override
+    public List<Book> list() {
+        return bookMapper.list();
+    }
+
+    //  根据条件查询
+    @Override
+    public PageInfo<Book> page(BaseRequest baseRequest) {
+        PageHelper.startPage(baseRequest.getPageNum(), baseRequest.getPageSize());
+        // 自关联查询
+        List<Book> categories = bookMapper.listByCondition(baseRequest);
+        return new PageInfo<>(categories);
+    }
+
+    //  新增
+    @Override
+    public void save(Book book) {
+        book.setCategory(category(book.getCategories()));
+        bookMapper.save(book);
+    }
+
+    //  根据id查询
+    @Override
+    public Book getById(Integer id) {
+        return bookMapper.getById(id);
+    }
+
+    //  更新
+    @Override
+    public void update(Book book) {
+        book.setCategory(category(book.getCategories()));
+        book.setUpdatetime(LocalDate.now());
+        bookMapper.updateById(book);
+    }
+
+    //  删除（根据id删除）
+    @Override
+    public void deleteById(Integer id) {
+        bookMapper.deleteById(id);
+    }
+
+    //  设置分类（更新和新增的公用方法）
+    private String category(List<String> categories) {
+        StringBuilder sb = new StringBuilder();
+        if (CollUtil.isNotEmpty(categories)) {
+            categories.forEach(v -> sb.append(v).append(" > "));
+            return sb.substring(0, sb.lastIndexOf(" > "));
+        }
+        return sb.toString();
+    }
+}
+```
+
+- 对更新和新增方法中的分类进行了定义，需要注意。
+
+`BookMapper`、`BookService`、`IBookService`、`BookController`、`BookPageRequest`略。
+
+```java
+//  分类（book管理中）
+    @GetMapping("/tree")
+    public Result tree() {
+        List<Category> list = categoryService.list();
+
+        // 对list操作即可
+//        List<Category> treeList = list.stream().filter(v -> v.getPid() == null).collect(Collectors.toList());  // 第一层
+        // 比如 递归实现 children列表的查询
+        return Result.success(createTree(null, list));   //  null 表示从第一级开始递归
+    }
+
+    // 完全递归的方法来实现递归树
+    private List<Category> createTree(Integer pid, List<Category> categories) {
+        List<Category> treeList = new ArrayList<>();
+        for (Category category : categories) {
+            if (pid == null) {
+                if (category.getPid() == null) {  // 那这就是第一级节点
+                    treeList.add(category);
+                    category.setChildren(createTree(category.getId(), categories));
+                }
+            } else {
+                if (pid.equals(category.getPid())) {
+                    treeList.add(category);
+                    category.setChildren(createTree(category.getId(), categories));
+                }
+            }
+            if (CollUtil.isEmpty(category.getChildren())) {
+                category.setChildren(null);
+            }
+        }
+        return treeList;
+    }
+```
+
+- 为了实现书籍的管理功能，还需要再`CategoryController`中实现该接口。
+
+## 12.3 前端（略）
+
+*****—*****
