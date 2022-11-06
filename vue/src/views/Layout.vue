@@ -78,6 +78,15 @@
             <el-menu-item index="/bookList">图书列表</el-menu-item>
           </el-submenu>
 
+          <el-submenu index="borrow">
+            <template slot="title">
+              <i class="el-icon-document-copy"></i>
+              <span>借书管理</span>
+            </template>
+            <el-menu-item index="/BorrowAdd">借书添加</el-menu-item>
+            <el-menu-item index="/borrowList">借书列表</el-menu-item>
+          </el-submenu>
+
           <el-menu-item index="aboutMore" disabled>
             <i class="el-icon-question"></i>
             <span>项目详情</span>
@@ -88,7 +97,7 @@
       </div>
 
       <!--   主体数据   -->
-      <div style="flex: 1;background-color: white">
+      <div style="flex: 1;width: 0;background-color: white">
         <router-view/>
 
       </div>

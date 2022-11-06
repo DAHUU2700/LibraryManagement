@@ -1,7 +1,8 @@
 <template>
-  <div style="margin: 20px;width: 300px">
+<!--  <div style="margin: 20px;width: 300px">-->
+    <div style="width: 80%">
     <h2 style="margin-bottom: 30px">新增图书</h2>
-    <el-form  :rules="rules" ref="ruleForm" :model="form" label-width="100px">
+    <el-form :inline="true":rules="rules" ref="ruleForm" :model="form" label-width="100px">
       <el-form-item label="名称" prop="name">
         <el-input v-model="form.name" placeholder="请输入名称"></el-input>
       </el-form-item>
@@ -33,13 +34,13 @@
         <el-input v-model="form.bookNo" placeholder="请输入标准码"></el-input>
       </el-form-item>
 
-<!--      <el-form-item label="借书积分" prop="cover">-->
-<!--        <el-input-number v-model="form.score" :min="10" :max="30" label="所需积分"></el-input-number>-->
-<!--      </el-form-item>-->
-<!--      -->
-<!--      <el-form-item label="数量" prop="nums">-->
-<!--        <el-input v-model="form.nums" placeholder="请输入数量"></el-input>-->
-<!--      </el-form-item>-->
+      <el-form-item label="借书积分" prop="cover">
+        <el-input-number v-model="form.score" :min="10" :max="30" label="所需积分"></el-input-number>
+      </el-form-item>
+
+      <el-form-item label="数量" prop="nums">
+        <el-input v-model="form.nums" placeholder="请输入数量"></el-input>
+      </el-form-item>
 
       <br>
       <el-form-item label="封面" prop="cover">

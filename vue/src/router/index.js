@@ -64,16 +64,14 @@ const routes = [
       },
 
       //  图书book路由
-      {
-        path: 'bookList', name: 'BookList', component: () => import('@/views/book/List')
-      },
-      {
-        path: 'bookAdd', name: 'BookAdd', component: () => import('@/views/book/Add')
-      },
-      {
-        path: 'bookEdit', name: 'BookEdit', component: () => import('@/views/book/Edit')
-      },
+      { path: 'bookList', name: 'BookList', component: () => import('@/views/book/List') },
+      { path: 'bookAdd', name: 'BookAdd', component: () => import('@/views/book/Add') },
+      { path: 'bookEdit', name: 'BookEdit', component: () => import('@/views/book/Edit') },
 
+      //  借书borrow路由
+      { path: 'borrowList', name: 'BorrowList', component: () => import('@/views/borrow/List') },
+      { path: 'borrowAdd', name: 'BorrowAdd', component: () => import('@/views/borrow/Add') },
+      { path: 'borrowEdit', name: 'BorrowEdit', component: () => import('@/views/borrow/Edit') },
 
     ]
   },

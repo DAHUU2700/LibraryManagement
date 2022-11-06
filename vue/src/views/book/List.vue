@@ -17,8 +17,8 @@
       <el-table-column prop="author" label="作者"></el-table-column>
       <el-table-column prop="publisher" label="出版社"></el-table-column>
       <el-table-column prop="category" label="分类"></el-table-column>
-<!--      <el-table-column prop="score" label="借书积分"></el-table-column>-->
-<!--      <el-table-column prop="nums" label="数量"></el-table-column>-->
+      <el-table-column prop="score" label="借书积分"></el-table-column>
+      <el-table-column prop="nums" label="数量"></el-table-column>
       <el-table-column prop="cover" label="封面">
         <template v-slot="scope">
           <el-image :src="scope.row.cover" :preview-src-list="[scope.row.cover]"></el-image>
