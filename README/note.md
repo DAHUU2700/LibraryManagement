@@ -4813,3 +4813,30 @@ public class BookService implements IBookService {
 ## 12.3 前端（略）
 
 *****—*****
+
+# 13、借书管理
+
+## 13.1 sql
+
+```sql
+DROP TABLE IF EXISTS `borrow`;
+CREATE TABLE `borrow` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `book_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '图书名称',
+  `book_no` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '图书标准码',
+  `user_no` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户名（user.username）',
+  `user_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户名称',
+  `user_phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户联系方式',
+  `score` int(10) DEFAULT NULL COMMENT '借书积分',
+  `createtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updatetime` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+信息量爆炸，明天写
+
+> **_BugTip_**：`空指针异常`
+>
+> - 当新增用户完成时，充值积分会报错；猜测：设置的的默认积分为0的类型是字符串，导致拼接失败。
+
