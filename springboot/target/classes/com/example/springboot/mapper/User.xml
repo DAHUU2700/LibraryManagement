@@ -30,8 +30,8 @@
 
     <!--  添加  -->
     <insert id="sava">
-        insert into user(name,username,age,sex,phone,address)
-        values (#{name},#{username},#{age},#{sex},#{phone},#{address})
+        insert into user(name,username,age,sex,phone,address,account)
+        values (#{name},#{username},#{age},#{sex},#{phone},#{address},#{account})
     </insert>
 
     <!--  修改（根据id查询）  -->
@@ -41,7 +41,8 @@
 
     <!--  更新  -->
     <update id="updateById">
-        update user set name = #{name},age = #{age},sex = #{sex},phone = #{phone}, address = #{address}, updatetime = #{updatetime}
+        update user set name = #{name},age = #{age},sex = #{sex},phone = #{phone},
+                        address = #{address}, updatetime = #{updatetime},account = #{account}
         where id = #{id}
     </update>
 
@@ -50,6 +51,9 @@
         delete from user where id = #{id}
     </delete>
 
-
+    <!--  检验用户积分  -->
+    <select id="getByUsername" resultType="com.example.springboot.entity.User">
+        select * from user where username = #{username}
+    </select>
 
 </mapper>

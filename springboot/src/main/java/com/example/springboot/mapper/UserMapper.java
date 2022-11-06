@@ -45,4 +45,7 @@ public interface UserMapper {
      * @param id
      */
     void deleteById(Integer id);
+
+    //  检验图书
+    User getByUsername(String userNo);
 }

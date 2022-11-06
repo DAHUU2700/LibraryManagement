@@ -3,6 +3,7 @@ package com.example.springboot.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import com.example.springboot.controller.request.BaseRequest;
 import com.example.springboot.entity.Book;
+import com.example.springboot.exception.ServiceException;
 import com.example.springboot.mapper.BookMapper;
 import com.example.springboot.service.IBookService;
 import com.github.pagehelper.PageHelper;
@@ -40,8 +41,13 @@ public class BookService implements IBookService {
     //  新增
     @Override
     public void save(Book book) {
-        book.setCategory(category(book.getCategories()));
-        bookMapper.save(book);
+        try {
+            book.setCategory(category(book.getCategories()));
+            bookMapper.save(book);
+        } catch (Exception e) {
+            throw new ServiceException("数据插入错误",e);
+        }
+
     }
 
     //  根据id查询
@@ -53,9 +59,15 @@ public class BookService implements IBookService {
     //  更新
     @Override
     public void update(Book book) {
-        book.setCategory(category(book.getCategories()));
-        book.setUpdatetime(LocalDate.now());
-        bookMapper.updateById(book);
+        try {
+            book.setCategory(category(book.getCategories()));
+            book.setUpdatetime(LocalDate.now());
+            bookMapper.updateById(book);
+        } catch (Exception e) {
+            throw new ServiceException("数据更新错误");
+        }
+
+
     }
 
     //  删除（根据id删除）

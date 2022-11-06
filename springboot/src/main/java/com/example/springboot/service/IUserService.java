@@ -24,4 +24,7 @@ public interface IUserService {
 
     //  删除
     void deleteById(Integer id);
+
+    //  充值
+    void account(User user);
 }

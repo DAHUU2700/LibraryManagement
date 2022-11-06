@@ -60,4 +60,18 @@ public class UserService implements IUserService {
     public void deleteById(Integer id) {
         userMapper.deleteById(id);
     }
+
+    //  充值
+    @Override
+    public void account(User user) {
+        Integer score = user.getScore();
+        if (score == null) {
+            return;
+        }
+        Integer id =user.getId();
+        User dbuser = userMapper.getById(id);
+        dbuser.setAccount(dbuser.getAccount() + score);
+        userMapper.updateById(dbuser);
+
+    }
 }

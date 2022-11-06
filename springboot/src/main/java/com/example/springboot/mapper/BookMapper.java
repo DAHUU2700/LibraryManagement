@@ -25,4 +25,7 @@ public interface BookMapper {
 
     //  删除
     void deleteById(Integer id);
+
+    //  校验积分
+    Book getByNo(String userNo);
 }

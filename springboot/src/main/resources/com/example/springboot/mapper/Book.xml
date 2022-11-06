@@ -26,8 +26,8 @@
 
     <!--  添加  -->
     <insert id="save">
-        insert into book(name,description,author,publish_date,publisher,category,cover,book_no)
-        values (#{name},#{description},#{author},#{publishDate},#{publisher},#{category},#{cover},#{bookNo})
+        insert into book(name,description,author,publish_date,publisher,category,cover,book_no,score,nums)
+        values (#{name},#{description},#{author},#{publishDate},#{publisher},#{category},#{cover},#{bookNo},#{score},#{nums})
     </insert>
 
     <!--  修改(根据id查询)  -->
@@ -39,8 +39,8 @@
     <update id="updateById">
         update book
         set name = #{name},description = #{description},author=#{author},publish_date=#{publishDate},
-            publisher=#{publisher},category=#{category},book_no=#{bookNo},cover = #{cover},
-            updatetime = #{updatetime}
+            publisher=#{publisher},category=#{category},book_no=#{bookNo},cover=#{cover},nums=#{nums},
+            score =#{score},updatetime = #{updatetime}
         where id = #{id}
     </update>
 
@@ -48,5 +48,11 @@
     <delete id="deleteById">
         delete from book where id = #{id}
     </delete>
+
+    <!-- 校验图书 -->
+    <select id="getByNo" resultType="com.example.springboot.entity.Book">
+        select * from book where book_no = #{bookNo}
+    </select>
+
 
 </mapper>

@@ -57,5 +57,12 @@ public class UserController {
         userService.deleteById(id);
         return Result.success();
     }
+
+    //  充值余额
+    @PostMapping("/account")   //这里不加，也可以直接通过"/"访问
+    public Result account(@RequestBody User user) {
+        userService.account(user);
+        return Result.success();
+    }
 }
 

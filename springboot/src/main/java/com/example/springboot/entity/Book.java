@@ -17,6 +17,8 @@ public class Book {
     private String category;
     private String cover;
     private String bookNo;
+    private Integer score;
+    private Integer nums;
 
     private List<String> categories;
 
