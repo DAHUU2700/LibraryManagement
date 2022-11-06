@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springboot.mapper.BorrowMapper">
+
+    <!--  查询所有  -->
+    <select id="list" resultType="com.example.springboot.entity.Borrow">
+        select * from borrow
+        order by id desc;
+    </select>
+
+    <!--  条件查询  -->
+    <select id="listByCondition" resultType="com.example.springboot.entity.Borrow">
+        select * from borrow
+        <where>
+            <if test="bookName != null and bookName != ''">
+                book_name like concat('%', #{bookName}, '%')
+            </if>
+            <if test="bookNo != null and bookNo != ''">
+                and book_no = #{bookNo}
+            </if>
+            <if test="userName != null and userName != ''">
+                user_name like concat('%', #{userName}, '%')
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <!--  添加  -->
+    <insert id="save">
+        insert into borrow(book_name,book_no,user_no,user_name,user_phone,score)
+        values (#{bookName},#{bookNo},#{userNo},#{userName},#{userPhone},#{score})
+    </insert>
+
+    <!--  修改(根据id查询)  -->
+    <select id="getById" resultType="com.example.springboot.entity.Borrow">
+        select *
+        from borrow
+        where id = #{id}
+    </select>
+
+    <!--  更新  -->
+    <update id="updateById">
+        update borrow
+        set book_name = #{bookName},book_no = #{bookNo},user_id=#{userNo},user_name=#{userName},
+            user_phone=#{userPhone},score=#{score},updatetime = #{updatetime}
+        where id = #{id}
+    </update>
+
+    <!--  删除  -->
+    <delete id="deleteById">
+        delete from borrow
+        where id = #{id}
+    </delete>
+
+</mapper>
