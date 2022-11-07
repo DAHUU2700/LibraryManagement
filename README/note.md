@@ -4836,7 +4836,153 @@ CREATE TABLE `borrow` (
 
 信息量爆炸，明天写
 
+## 13.2 后端
+
+```java
+//  新增
+@Override
+@Transactional  //保证数据同时更新
+public void save(Borrow borrow) {
+    //  校验
+    //  1.用户的积分是否足够
+    String userNo = borrow.getUserNo();
+    User user = userMapper.getByUsername(userNo);
+    if (Objects.isNull(user)) {
+        throw new ServiceException("用户不存在");
+    }
+    //  2.图书数量是否足够
+    Book book = bookMapper.getByNo(borrow.getBookNo());
+    if (Objects.isNull(book)) {
+        throw new ServiceException("所借图书不存在");
+    }
+
+    Integer account = user.getAccount();
+    Integer score = book.getScore();
+    //  3.用户账号余额
+    if (score > account) {
+        throw new ServiceException("用户积分不足");
+    }
+
+    //  4.图书数量
+    if (book.getNums() < 1) {
+        throw new ServiceException("图书数量不足");
+    }
+    //  更新余额
+    user.setAccount(user.getAccount() - score);
+    userMapper.updateById(user);
+    //  更新图书数量
+    book.setNums(book.getNums() - 1);
+    bookMapper.updateById(book);
+    //  新增借书记录
+    
+    borrowMapper.save(borrow);
+}
+```
+
+业务层中需要实现的业务——当用户借书时，需要对用户积分和图书数量进行校验。
+
 > **_BugTip_**：`空指针异常`
 >
 > - 当新增用户完成时，充值积分会报错；猜测：设置的的默认积分为0的类型是字符串，导致拼接失败。
+> - 解决：判断用户积分是否为null，为空就赋值0.
+
+```java
+        if (account == null) {
+            int accountZero = 0;
+            dbuser.setAccount(accountZero + score);
+        } else {
+            dbuser.setAccount(dbuser.getAccount() + score);
+        }
+```
+
+其余部分略
+
+# 14、还书管理
+
+## 13.1 sql
+
+```sql
+DROP TABLE IF EXISTS `restore`;
+CREATE TABLE `restore` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `book_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '图书名称',
+  `book_no` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '图书标准码',
+  `user_no` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户名（user.username）',
+  `user_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户名称',
+  `user_phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户联系方式',
+  `score` int(10) DEFAULT NULL COMMENT '借书积分',
+  `createtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updatetime` datetime DEFAULT NULL COMMENT '更新时间',
+  `status` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '已借出' COMMENT '借书状态',
+  `days` int(20) DEFAULT NULL COMMENT '借书天数',
+  `return_date` datetime DEFAULT NULL COMMENT '归还天数',
+  `real_date` datetime DEFAULT NULL COMMENT '实际归还日期',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+和借书系统相似，且仅有List页面；但是业务层逻辑有点小难度。
+
+## 13.2 后端
+
+> **_BugTip_**：` Parameter 'id' not found.  Available parameters are [arg1, arg0, param1, param2]`
+>
+> - Mybatis在运行的时候发生了系统异常，此处嵌套了一个参数绑定异常。
+> - 解决：在`Mapper`接口中声明方法的时候有多个参数，但是没有使用`@Param`注解。
+
+- 错误代码：
+
+  ```java
+  //  修改状态
+  void updateStatus( String status,Integer id);
+  ```
+
+- 正确代码：
+
+  ```java
+  //  修改状态
+  void updateStatus(@Param("status") String status,@Param("id") Integer id);
+  ```
+
+难点：
+
+```java
+//  还书
+    @Transactional
+    @Override
+    public void save(Restore obj) {
+        //  改状态
+        obj.setStatus("已归还");
+        obj.setRealDate(LocalDate.now());
+        restoreMapper.updateStatus("已归还",obj.getId());
+
+        //  图书的数量增加
+        restoreMapper.save(obj);
+        bookMapper.updateNumByNo(obj.getBookNo());
+
+        // 返还和扣除用户积分
+        Book book = bookMapper.getByNo(obj.getBookNo());
+        if (book != null) {
+            long until = 0;
+            if (obj.getRealDate().isBefore(obj.getReturnDate())) {
+                until = obj.getRealDate().until(obj.getReturnDate(), ChronoUnit.DAYS);
+            } else if (obj.getRealDate().isAfter(obj.getReturnDate())) {
+                // 逾期归还，要扣额外的积分
+                until = -obj.getReturnDate().until(obj.getRealDate(), ChronoUnit.DAYS);
+            }
+            int score = (int) until * book.getScore();
+            // 获取待归还的积分
+            User user = userMapper.getByUsername(obj.getUserNo());
+            int account = user.getAccount() + score;
+            user.setAccount(account);
+            if (account < 0) {
+                // 锁定账号
+                user.setStatus(false);
+            }
+            userMapper.updateById(user);
+        }
+    }
+```
+
+
 
