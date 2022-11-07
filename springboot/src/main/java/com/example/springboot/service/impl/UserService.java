@@ -70,7 +70,14 @@ public class UserService implements IUserService {
         }
         Integer id =user.getId();
         User dbuser = userMapper.getById(id);
-        dbuser.setAccount(dbuser.getAccount() + score);
+        Integer account = dbuser.getAccount();
+        //  bug解决，但逻辑感觉怪怪哈哈
+        if (account == null) {
+            int accountZero = 0;
+            dbuser.setAccount(accountZero + score);
+        } else {
+            dbuser.setAccount(dbuser.getAccount() + score);
+        }
         userMapper.updateById(dbuser);
 
     }
