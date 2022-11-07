@@ -21,7 +21,7 @@
                 and book_no = #{bookNo}
             </if>
             <if test="userName != null and userName != ''">
-                user_name like concat('%', #{userName}, '%')
+                and user_name like concat('%', #{userName}, '%')
             </if>
         </where>
         order by id desc
@@ -29,8 +29,8 @@
 
     <!--  添加  -->
     <insert id="save">
-        insert into borrow(book_name,book_no,user_no,user_name,user_phone,score)
-        values (#{bookName},#{bookNo},#{userNo},#{userName},#{userPhone},#{score})
+        insert into borrow(book_name,book_no,user_no,user_name,user_phone,score,days,return_date)
+        values (#{bookName},#{bookNo},#{userNo},#{userName},#{userPhone},#{score},#{days},#{returnDate})
     </insert>
 
     <!--  修改(根据id查询)  -->
@@ -44,7 +44,8 @@
     <update id="updateById">
         update borrow
         set book_name = #{bookName},book_no = #{bookNo},user_id=#{userNo},user_name=#{userName},
-            user_phone=#{userPhone},score=#{score},updatetime = #{updatetime}
+            user_phone=#{userPhone},score=#{score},updatetime = #{updatetime},
+            status=#{status},days=#{days},return_date=#{returnDate}
         where id = #{id}
     </update>
 
@@ -53,5 +54,6 @@
         delete from borrow
         where id = #{id}
     </delete>
+
 
 </mapper>

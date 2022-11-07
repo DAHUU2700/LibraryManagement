@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 
@@ -42,8 +43,21 @@ public class BorrowService implements IBorrowService {
     public PageInfo<Borrow> page(BaseRequest baseRequest) {
         PageHelper.startPage(baseRequest.getPageNum(), baseRequest.getPageSize());
         // 自关联查询
-        List<Borrow> categories = borrowMapper.listByCondition(baseRequest);
-        return new PageInfo<>(categories);
+        List<Borrow> borrows = borrowMapper.listByCondition(baseRequest);
+        for (Borrow borrow : borrows) {
+            LocalDate returnDate = borrow.getReturnDate();
+            LocalDate now = LocalDate.now();
+            if (now.plusDays(1).isEqual(returnDate)) {
+                borrow.setNote("即将到期");
+            } else if (now.isEqual(returnDate)) {
+                borrow.setNote("已到期");
+            } else if (now.isAfter(returnDate)) {
+                borrow.setNote("已过期");
+            } else {
+                borrow.setNote("正常");
+            }
+        }
+        return new PageInfo<>(borrows);
     }
 
     //  新增
@@ -62,17 +76,17 @@ public class BorrowService implements IBorrowService {
         if (Objects.isNull(book)) {
             throw new ServiceException("所借图书不存在");
         }
-
-        Integer account = user.getAccount();
-        Integer score = book.getScore();
-        //  3.用户账号余额
-        if (score > account) {
-            throw new ServiceException("用户积分不足");
-        }
-
-        //  4.图书数量
+        //  3.图书数量
         if (book.getNums() < 1) {
             throw new ServiceException("图书数量不足");
+        }
+
+        Integer account = user.getAccount();
+        Integer score = book.getScore() * borrow.getDays();
+
+        //  4.用户账号余额
+        if (score > account) {
+            throw new ServiceException("用户积分不足");
         }
         //  更新余额
         user.setAccount(user.getAccount() - score);
@@ -80,9 +94,11 @@ public class BorrowService implements IBorrowService {
         //  更新图书数量
         book.setNums(book.getNums() - 1);
         bookMapper.updateById(book);
+
+        //  归还日期
+        borrow.setReturnDate(LocalDate.now().plus(borrow.getDays(), ChronoUnit.DAYS));
+        borrow.setScore(score);
         //  新增借书记录
-
-
         borrowMapper.save(borrow);
     }
 

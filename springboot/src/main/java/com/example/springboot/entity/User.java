@@ -18,6 +18,7 @@ public class User {
     private Integer account;
 
     private Integer score;
+    private boolean status;
 
     @JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
     private Date createtime;

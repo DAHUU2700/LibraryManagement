@@ -18,6 +18,18 @@
       <el-table-column prop="sex" label="性别" width="50"></el-table-column>
       <el-table-column prop="address" label="地址"></el-table-column>
       <el-table-column prop="account" label="账号积分"></el-table-column>
+
+      <el-table-column label="状态">
+        <template v-slot="scope">
+          <el-switch
+              v-model="scope.row.status"
+              @change="changeStatus(scope.row)"
+              active-color="#13ce66"
+              inactive-color="#ff4949">
+          </el-switch>
+        </template>
+      </el-table-column>
+
       <el-table-column prop="createtime" label="创建时间"></el-table-column>
       <el-table-column prop="updatetime" label="更新时间"></el-table-column>
 
@@ -99,7 +111,9 @@ export default {
         phone: ''
       },
       dialogFormVisible: false,
-      form: {},
+      form: {
+        account:0
+      },
       rules: {
         score: [
           {required: true, message: '请输入充值积分', trigger: 'blur'},
@@ -176,7 +190,18 @@ export default {
           })
         }
       })
-    }
+    },
+    //  用户状态
+    changeStatus(row) {
+      request.put('/user/update', row).then(res => {
+        if (res.code === '200') {
+          this.$notify.success('操作成功')
+          this.load()
+        } else {
+          this.$notify.error(res.msg)
+        }
+      })
+    },
   }
 }
 </script>

@@ -73,6 +73,8 @@ const routes = [
       { path: 'borrowAdd', name: 'BorrowAdd', component: () => import('@/views/borrow/Add') },
       { path: 'borrowEdit', name: 'BorrowEdit', component: () => import('@/views/borrow/Edit') },
 
+      //  还书return路由
+      { path: 'returnList', name: 'ReturnList', component: () => import('@/views/return/List') },
     ]
   },
 

@@ -35,7 +35,7 @@
       margin-right: 2px;
       background-color: white">
         <el-menu
-            :default-active="$route.path" router class="el-menu-demo">
+            :default-active="$route.path" router class="el-menu-demo" style="margin-bottom: 20px">
 
           <el-menu-item index="/">
             <i class="el-icon-s-home"></i>
@@ -85,6 +85,14 @@
             </template>
             <el-menu-item index="/BorrowAdd">借书添加</el-menu-item>
             <el-menu-item index="/borrowList">借书列表</el-menu-item>
+          </el-submenu>
+
+          <el-submenu index="return">
+            <template slot="title">
+              <i class="el-icon-document"></i>
+              <span>还书管理</span>
+            </template>
+            <el-menu-item index="/ReturnList">还书列表</el-menu-item>
           </el-submenu>
 
           <el-menu-item index="aboutMore" disabled>

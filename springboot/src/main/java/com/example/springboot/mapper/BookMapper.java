@@ -28,4 +28,7 @@ public interface BookMapper {
 
     //  校验积分
     Book getByNo(String userNo);
+
+    //  还书时修改图书数量
+    void updateNumByNo(String bookNo);
 }

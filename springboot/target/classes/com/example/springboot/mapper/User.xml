@@ -41,7 +41,7 @@
 
     <!--  更新  -->
     <update id="updateById">
-        update user set name = #{name},age = #{age},sex = #{sex},phone = #{phone},
+        update user set name = #{name},age = #{age},sex = #{sex},phone = #{phone},status = #{status},
                         address = #{address}, updatetime = #{updatetime},account = #{account}
         where id = #{id}
     </update>

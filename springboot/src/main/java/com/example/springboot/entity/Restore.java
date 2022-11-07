@@ -2,11 +2,11 @@ package com.example.springboot.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+
 import java.time.LocalDate;
 
 @Data
-public class Borrow {
-
+public class Restore {
     /**
      * id
      */
@@ -70,8 +70,7 @@ public class Borrow {
     private LocalDate returnDate;
 
     /**
-     * 提醒状态
+     * 实际归还时间
      */
-    private String note;
-
+    private LocalDate realDate;
 }

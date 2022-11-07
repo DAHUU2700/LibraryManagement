@@ -54,5 +54,13 @@
         select * from book where book_no = #{bookNo}
     </select>
 
+    <!--  还书——更新图书数量  -->
+    <update id="updateNumByNo">
+        update book
+        set nums = nums + 1
+        where book_no = #{bookNo}
+    </update>
+
+
 
 </mapper>
