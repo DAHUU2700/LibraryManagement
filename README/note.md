@@ -4984,5 +4984,108 @@ CREATE TABLE `restore` (
     }
 ```
 
+# 15、文件上传
 
+在图书界面需要完善上传封面的代码；在`BookController`中新增上传文件和下载文件的接口：
+
+```java
+    private static final String BASE_FILE_PATH = System.getProperty("user.dir") + "/files/";
+    //  上传文件
+    @PostMapping("/file/upload")
+    public Result uploadFile(MultipartFile file) {
+        String originalFilename = file.getOriginalFilename();
+        if (StrUtil.isBlank(originalFilename)) {
+            return Result.error("文件上传失败");
+        }
+        long flag = System.currentTimeMillis();
+        String filePath = BASE_FILE_PATH + flag + "_" + originalFilename;
+        try {
+            FileUtil.mkParentDirs(filePath);
+            // 创建父级目录
+            file.transferTo(FileUtil.file(filePath));
+            Admin currentAdmin = TokenUtils.getCurrentAdmin();
+            String token = TokenUtils.genToken(currentAdmin.getId().toString(), currentAdmin.getPassword(), 15);
+            String url = "http://localhost:9090/api/book/file/download/" + flag + "?&token=" + token;
+            if (originalFilename.endsWith("png") || originalFilename.endsWith("jpg") || originalFilename.endsWith("pdf")) {
+                url += "&play=1";
+            }
+            return Result.success(url);
+        } catch (Exception e) {
+            log.info("文件上传失败", e);
+        }
+        return Result.error("文件上传失败");
+    }
+
+    //  下载文件
+    @GetMapping("/file/download/{flag}")
+    public void download(@PathVariable String flag, @RequestParam(required = false) String play, HttpServletResponse response) {
+        OutputStream os;
+        List<String> fileNames = FileUtil.listFileNames(BASE_FILE_PATH);
+        String fileName = fileNames.stream().filter(name -> name.contains(flag)).findAny().orElse("");
+        //  System.currentTimeMillis() + originalFilename
+        try {
+            if (StrUtil.isNotEmpty(fileName)) {
+                String realName = fileName.substring(fileName.indexOf("_") + 1);
+                if ("1".equals(play)) {
+                    response.addHeader("Content-Disposition", "inline;filename=" + URLEncoder.encode(realName, "UTF-8"));
+                } else {
+                    response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(realName, "UTF-8"));
+                }
+                byte[] bytes = FileUtil.readBytes(BASE_FILE_PATH + fileName);
+                os = response.getOutputStream();
+                os.write(bytes);
+                os.flush();
+                os.close();
+            }
+        } catch (Exception e) {
+            log.error("文件下载失败", e);
+        }
+    }
+```
+
+设置token的有效时间`TokenUtils`：
+
+```java
+    /**
+     * 生成token day天失效
+     * @param adminId
+     * @param sign
+     * @param days
+     * @return
+     */
+    public static String genToken(String adminId, String sign,int days) {
+        return JWT.create().withAudience(adminId) // 将 user id 保存到 token 里面,作为载荷
+                .withExpiresAt(DateUtil.offsetHour(new Date(), days)) // 参数days后token过期
+                .sign(Algorithm.HMAC256(sign)); // 以 password 作为 token 的密钥
+    }
+```
+
+前端：
+
+```html
+      <el-form-item label="封面" prop="cover">
+        <el-upload
+            class="avatar-uploader"
+            :action="'http://localhost:9090/api/book/file/upload?token=' + this.admin.token"
+            :show-file-list="false"
+            :on-success="handleCoverSuccess"
+        >
+          <img v-if="form.cover" :src="form.cover" class="avatar">
+          <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+        </el-upload>
+      </el-form-item>
+```
+
+```js
+    //  上传封面文件
+    handleCoverSuccess(res) {
+      //  cover: '' 在form中需要初始化
+      if (res.code === '200') {
+        console.log(res.data)
+        // this.$set(this.form, 'cover', res.data)
+        //  强制设置
+        this.form.cover = res.data
+      }
+    },
+```
 
