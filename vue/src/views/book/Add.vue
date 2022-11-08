@@ -103,10 +103,13 @@ export default {
     })
   },
   methods: {
+    //  上传封面文件
     handleCoverSuccess(res) {
+      //  cover: '' 需要初始化
       if (res.code === '200') {
         console.log(res.data)
         // this.$set(this.form, 'cover', res.data)
+        //  强制设置
         this.form.cover = res.data
       }
     },

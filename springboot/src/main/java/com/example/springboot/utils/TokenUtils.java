@@ -42,6 +42,19 @@ public class TokenUtils {
     }
 
     /**
+     * 生成token day天失效
+     * @param adminId
+     * @param sign
+     * @param days
+     * @return
+     */
+    public static String genToken(String adminId, String sign,int days) {
+        return JWT.create().withAudience(adminId) // 将 user id 保存到 token 里面,作为载荷
+                .withExpiresAt(DateUtil.offsetHour(new Date(), days)) // 参数days后token过期
+                .sign(Algorithm.HMAC256(sign)); // 以 password 作为 token 的密钥
+    }
+
+    /**
      * 获取当前登录的用户信息
      *
      * @return user对象
@@ -52,7 +65,7 @@ public class TokenUtils {
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
             token = request.getHeader("token");
-            if (StrUtil.isNotBlank(token)) {
+            if (StrUtil.isBlank(token)) {
                 token = request.getParameter("token");
             }
             if (StrUtil.isBlank(token)) {
