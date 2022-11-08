@@ -1,6 +1,7 @@
 package com.example.springboot.mapper;
 
 import com.example.springboot.controller.request.BaseRequest;
+import com.example.springboot.controller.request.RestoreCount;
 import com.example.springboot.entity.Restore;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,4 +22,9 @@ public interface RestoreMapper {
 
     //  修改状态
     void updateStatus(@Param("status") String status,@Param("id") Integer id);
+
+    //  首页数据
+    // 1 borrow  2 return
+    List<RestoreCount> getCountByTimeRange(@Param("timeRange") String timeRange, @Param("type") int type);
+
 }

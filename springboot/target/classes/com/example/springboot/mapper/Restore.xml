@@ -39,6 +39,35 @@
         where id = #{id}
     </update>
 
-
+    <!--  首页折线图数据  -->
+    <select id="getCountByTimeRange" resultType="com.example.springboot.controller.request.RestoreCount">
+        -- DATE_FORMAT(createtime,'%Y-%m-%d')  把datetime类型的数据格式化成  yyyy-MM-dd
+        select count(id) as count, DATE_FORMAT(createtime,'%Y-%m-%d') as date from
+        <if test="type == 1">
+            borrow
+        </if>
+        <if test="type == 2">
+            restore
+        </if>
+        where
+        <choose>
+            <when test="timeRange == 'week'">
+                createtime >=  DATE_SUB(NOW(),INTERVAL 1 WEEK)   --  DATE_SUB  就是数据库进行时间计算的函数
+            </when>
+            <when test="timeRange == 'month'">
+                createtime >=  DATE_SUB(NOW(),INTERVAL 1 MONTH)
+            </when>
+            <when test="timeRange == 'month2'">
+                createtime >=  DATE_SUB(NOW(),INTERVAL 2 MONTH)
+            </when>
+            <when test="timeRange == 'month3'">
+                createtime >=  DATE_SUB(NOW(),INTERVAL 3 MONTH)
+            </when>
+            <otherwise>
+                createtime > now()
+            </otherwise>
+        </choose>
+        group by date
+    </select>
 
 </mapper>
