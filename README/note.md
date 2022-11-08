@@ -5089,3 +5089,19 @@ CREATE TABLE `restore` (
     },
 ```
 
+# 16、首页Echarts
+
+Echarts官网：https://echarts.apache.org/
+
+1. 安装`Echarts`：
+
+   ```sh
+   npm i echarts -S
+   ```
+
+2. 引用：
+
+   ```js
+   import * as echarts from 'echarts'
+   ```
+
