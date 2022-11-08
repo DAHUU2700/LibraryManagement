@@ -1,7 +1,7 @@
 <template>
   <div>
-    <!--    搜索表单-->
-    <div style="margin-bottom: 10px;margin-top: 10px;margin-left: 10px">
+    <!--  搜索表单 -->
+    <div style="margin-bottom: 20px;margin-top: 10px;margin-left: 10px">
       <el-input style="width: 240px" placeholder="请输入图书名称" v-model="params.bookName"></el-input>
       <el-input style="width: 240px; margin-left: 5px" placeholder="请输入图书标准码" v-model="params.bookNo"></el-input>
       <el-input style="width: 240px; margin-left: 5px" placeholder="请输入用户名称" v-model="params.userName"></el-input>
@@ -9,20 +9,26 @@
       <el-button style="margin-left: 5px" type="warning" @click="reset"><i class="el-icon-refresh"></i> 重置</el-button>
     </div>
 
-    <el-table :data="tableData" stripe row-key="id"  default-expand-all>
-      <el-table-column prop="id" label="编号" width="80"></el-table-column>
-      <el-table-column prop="bookName" label="图书名称"></el-table-column>
-      <el-table-column prop="bookNo" label="图书标准码"></el-table-column>
-      <el-table-column prop="userNo" label="会员码"></el-table-column>
-      <el-table-column prop="userName" label="用户名称"></el-table-column>
-      <el-table-column prop="userPhone" label="用户联系方式"></el-table-column>
-      <el-table-column prop="score" label="所用积分"></el-table-column>
-      <el-table-column prop="createtime" label="借出日期"></el-table-column>
-      <el-table-column prop="status" label="借出状态"></el-table-column>
-      <el-table-column prop="days" label="借出天数"></el-table-column>
-      <el-table-column prop="returnDate" label="归还日期"></el-table-column>
+    <el-table :data="tableData" stripe row-key="id"  default-expand-all
+              :header-cell-style="{
+              'background-color': '#f0f3ff',
+              'color': 'rgb(0,0,0)',
+              'border-top': '1px rgb(64, 158, 255) solid',
+              'border-bottom': '1px rgb(64, 158, 255) solid',
+               }">
+      <el-table-column prop="id" label="编号" width="50" align="center"></el-table-column>
+      <el-table-column prop="bookName" label="图书名称" align="center"></el-table-column>
+      <el-table-column prop="bookNo" label="图书标准码" align="center"></el-table-column>
+      <el-table-column prop="userNo" label="会员码" width="150" align="center"></el-table-column>
+      <el-table-column prop="userName" label="用户名称" align="center"></el-table-column>
+      <el-table-column prop="userPhone" label="用户联系方式" align="center"></el-table-column>
+      <el-table-column prop="score" label="所用积分" align="center"></el-table-column>
+      <el-table-column prop="createtime" label="借出日期" align="center"></el-table-column>
+      <el-table-column prop="returnDate" label="归还日期" align="center"></el-table-column>
+      <el-table-column prop="status" label="借出状态" align="center"></el-table-column>
+      <el-table-column prop="days" label="借出天数" width="80" align="center"></el-table-column>
 
-      <el-table-column prop="note" label="过期提醒">
+      <el-table-column prop="note" label="过期提醒" align="center">
         <template v-slot="scope">
           <el-tag type="success" v-if="scope.row.note === '正常'">{{ scope.row.note }}</el-tag>
           <el-tag type="primary" v-if="scope.row.note === '即将到期'">{{ scope.row.note }}</el-tag>
@@ -31,7 +37,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="管理">
+      <el-table-column label="管理" align="center">
         <template v-slot="scope">
           <el-popconfirm
               style="margin-left: 5px"
@@ -43,7 +49,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="操作">
+      <el-table-column label="操作" align="center">
         <template v-slot="scope">
           <el-popconfirm
               style="margin-left: 5px"

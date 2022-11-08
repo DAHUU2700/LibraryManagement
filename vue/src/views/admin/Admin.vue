@@ -1,7 +1,7 @@
 <template>
   <div>
     <!--    搜索表单    -->
-    <div style="margin-bottom: 10px;margin-top: 10px;margin-left: 10px">
+    <div style="margin-bottom: 20px;margin-top: 10px;margin-left: 10px">
       <el-input style="width: 240px" placeholder="请输入用户名" v-model="params.username"></el-input>
       <el-input style="width: 240px; margin: 6px" placeholder="请输入联系方式" v-model="params.phone" ></el-input>
       <el-input style="width: 240px" placeholder="请输入邮箱" v-model="params.email" ></el-input>
@@ -10,15 +10,21 @@
     </div>
 
     <!--  表头  -->
-    <el-table :data="tableData" stripe row-key="id"  default-expand-all>
-      <el-table-column prop="id" label="编号" width="50"></el-table-column>
-      <el-table-column prop="username" label="用户名" ></el-table-column>
-      <el-table-column prop="phone" label="联系方式" ></el-table-column>
-      <el-table-column prop="email" label="邮箱" ></el-table-column>
-      <el-table-column prop="createtime" label="创建时间" ></el-table-column>
-      <el-table-column prop="updatetime" label="更新时间" ></el-table-column>
+    <el-table :data="tableData" stripe row-key="id"  default-expand-all
+              :header-cell-style="{
+              'background-color': '#f0f3ff',
+              'color': 'rgb(0,0,0)',
+              'border-top': '1px rgb(64, 158, 255) solid',
+              'border-bottom': '1px rgb(64, 158, 255) solid',
+               }">
+      <el-table-column prop="id" label="编号" width="50" align="center"></el-table-column>
+      <el-table-column prop="username" label="用户名" align="center"></el-table-column>
+      <el-table-column prop="phone" label="联系方式" align="center"></el-table-column>
+      <el-table-column prop="email" label="邮箱" align="center"></el-table-column>
+      <el-table-column prop="createtime" label="创建时间" align="center"></el-table-column>
+      <el-table-column prop="updatetime" label="更新时间" align="center"></el-table-column>
 
-      <el-table-column label="状态">
+      <el-table-column label="状态" align="center">
         <template v-slot="scope">
           <el-switch
               v-model="scope.row.status"
@@ -30,7 +36,7 @@
       </el-table-column>
 
       <!--   操作（编辑&删除&修改密码）   -->
-      <el-table-column label="操作" width="400px">
+      <el-table-column label="操作" width="400px" align="left">
         <template v-slot="scope">
           <!--     scope.row 就是当前行数据     -->
           <el-button type="primary" @click="$router.push('/Edit?id=' + scope.row.id)" class="el-icon-setting">编辑</el-button>

@@ -1,6 +1,6 @@
 <template>
-  <div style="width: 80%">
-    <h2 style="margin-bottom: 30px">新增借书记录</h2>
+  <div >
+    <h2 style="margin:20px 0 30px 20px">新增借书记录</h2>
     <el-form :inline="true" :rules="rules" ref="ruleForm" :model="form" label-width="100px">
       <el-form-item label="图书标准码" prop="bookNo">
         <el-select v-model="form.bookNo" clearable filterable placeholder="请选择" @change="selBook">
@@ -21,7 +21,8 @@
       <el-form-item label="图书数量" prop="nums">
         <el-input v-model="form.nums" disabled></el-input>
       </el-form-item>
-      <br />
+      <br/>
+      <br/>
       <el-form-item label="会员码" prop="userNo">
         <el-select v-model="form.userNo" filterable placeholder="请选择" @change="selUser">
           <el-option
@@ -41,6 +42,9 @@
       <el-form-item label="用户账户积分" prop="account">
         <el-input disabled v-model="form.account" ></el-input>
       </el-form-item>
+
+      <br/>
+      <br/>
       <el-form-item label="借出的天数" prop="days">
         <el-input-number v-model="form.days" :min="1" :max="30" label="借出的天数"></el-input-number>
       </el-form-item>

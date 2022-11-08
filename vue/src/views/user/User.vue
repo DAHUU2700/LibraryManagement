@@ -1,7 +1,7 @@
 <template>
   <div>
     <!--    搜索表单    -->
-    <div style="margin-bottom: 10px;margin-top: 10px;margin-left: 10px">
+    <div style="margin-bottom: 20px;margin-top: 10px;margin-left: 10px">
       <el-input style="width: 240px" placeholder="请输入姓名" v-model="params.name"></el-input>
       <el-input style="width: 240px; margin: 5px" placeholder="请输入联系方式" v-model="params.phone"></el-input>
       <el-button style="margin-left: 5px" type="primary" @click="load"><i class="el-icon-search"></i>搜索</el-button>
@@ -9,17 +9,23 @@
     </div>
 
     <!--  表头  -->
-    <el-table :data="tableData" stripe>
-      <el-table-column prop="id" label="编号" width="50"></el-table-column>
-      <el-table-column prop="username" label="会员卡号"></el-table-column>
-      <el-table-column prop="name" label="姓名" width="100"></el-table-column>
-      <el-table-column prop="age" label="年龄" width="50"></el-table-column>
-      <el-table-column prop="phone" label="联系方式"></el-table-column>
-      <el-table-column prop="sex" label="性别" width="50"></el-table-column>
-      <el-table-column prop="address" label="地址"></el-table-column>
-      <el-table-column prop="account" label="账号积分"></el-table-column>
+    <el-table :data="tableData" stripe
+              :header-cell-style="{
+              'background-color': '#f0f3ff',
+              'color': 'rgb(0,0,0)',
+              'border-top': '1px rgb(64, 158, 255) solid',
+              'border-bottom': '1px rgb(64, 158, 255) solid',
+               }">
+    <el-table-column prop="id" label="编号" width="50" align="center"></el-table-column>
+      <el-table-column prop="username" label="会员卡号" align="center"></el-table-column>
+      <el-table-column prop="name" label="姓名" width="100" align="center"></el-table-column>
+      <el-table-column prop="age" label="年龄" width="50" align="center"></el-table-column>
+      <el-table-column prop="phone" label="联系方式" align="center"></el-table-column>
+      <el-table-column prop="sex" label="性别" width="50" align="center"></el-table-column>
+      <el-table-column prop="address" label="地址" align="center"></el-table-column>
+      <el-table-column prop="account" label="账号积分" align="center"></el-table-column>
 
-      <el-table-column label="状态">
+      <el-table-column label="状态" align="center">
         <template v-slot="scope">
           <el-switch
               v-model="scope.row.status"

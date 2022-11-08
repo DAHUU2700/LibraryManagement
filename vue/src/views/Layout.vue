@@ -35,7 +35,11 @@
       margin-right: 2px;
       background-color: white">
         <el-menu
-            :default-active="$route.path" router class="el-menu-demo" style="margin-bottom: 20px">
+            :default-active="$route.path" router
+            class="el-menu-vertical-demo"
+            default-active="2"
+            :unique-opened="true"
+            style="margin-bottom: 20px">
 
           <el-menu-item index="/">
             <i class="el-icon-s-home"></i>
@@ -47,8 +51,8 @@
               <i class="el-icon-user"></i>
               <span>会员管理</span>
             </template>
-            <el-menu-item index="/addUser">添加会员</el-menu-item>
-            <el-menu-item index="/userList">会员列表</el-menu-item>
+            <el-menu-item index="addUser">添加会员</el-menu-item>
+            <el-menu-item index="userList">会员列表</el-menu-item>
           </el-submenu>
 
           <el-submenu index="admin">
@@ -56,8 +60,8 @@
               <i class="el-icon-user-solid"></i>
               <span>管理员管理</span>
             </template>
-            <el-menu-item index="/Add">添加管理员</el-menu-item>
-            <el-menu-item index="/adminList">管理员列表</el-menu-item>
+            <el-menu-item index="Add">添加管理员</el-menu-item>
+            <el-menu-item index="adminList">管理员列表</el-menu-item>
           </el-submenu>
 
           <el-submenu index="category">
@@ -65,8 +69,8 @@
               <i class="el-icon-s-order"></i>
               <span>图书分类管理</span>
             </template>
-            <el-menu-item index="/categoryAdd">添加分类</el-menu-item>
-            <el-menu-item index="/categoryList">分类列表</el-menu-item>
+            <el-menu-item index="categoryAdd">添加分类</el-menu-item>
+            <el-menu-item index="categoryList">分类列表</el-menu-item>
           </el-submenu>
 
           <el-submenu index="book">
@@ -74,8 +78,8 @@
               <i class="el-icon-notebook-2"></i>
               <span>图书管理</span>
             </template>
-            <el-menu-item index="/bookAdd">添加图书</el-menu-item>
-            <el-menu-item index="/bookList">图书列表</el-menu-item>
+            <el-menu-item index="bookAdd">添加图书</el-menu-item>
+            <el-menu-item index="bookList">图书列表</el-menu-item>
           </el-submenu>
 
           <el-submenu index="borrow">
@@ -83,8 +87,8 @@
               <i class="el-icon-document-copy"></i>
               <span>借书管理</span>
             </template>
-            <el-menu-item index="/BorrowAdd">借书添加</el-menu-item>
-            <el-menu-item index="/borrowList">借书列表</el-menu-item>
+            <el-menu-item index="BorrowAdd">借书添加</el-menu-item>
+            <el-menu-item index="borrowList">借书列表</el-menu-item>
           </el-submenu>
 
           <el-submenu index="return">
@@ -92,7 +96,7 @@
               <i class="el-icon-document"></i>
               <span>还书管理</span>
             </template>
-            <el-menu-item index="/ReturnList">还书列表</el-menu-item>
+            <el-menu-item index="RestoreList">还书列表</el-menu-item>
           </el-submenu>
 
           <el-menu-item index="aboutMore" disabled>
@@ -100,12 +104,13 @@
             <span>项目详情</span>
           </el-menu-item>
 
-        </el-menu>
 
+        </el-aside>
+        </el-menu>
       </div>
 
       <!--   主体数据   -->
-      <div style="flex: 1;width: 0;background-color: white">
+      <div style="flex: 1;width: 0;background-color: white; align:center">
         <router-view/>
 
       </div>

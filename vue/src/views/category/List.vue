@@ -1,21 +1,26 @@
 <template>
   <div>
     <!--    搜索表单  -->
-    <div style="margin-bottom: 10px;margin-top: 10px;margin-left: 10px">
+    <div style="margin-bottom: 20px;margin-top: 10px;margin-left: 10px">
       <el-input style="width: 240px" placeholder="请输入分类名称" v-model="params.name"></el-input>
       <el-button style="margin-left: 8px" type="primary" @click="load"><i class="el-icon-search"></i> 搜索</el-button>
       <el-button style="margin-left: 6px" type="warning" @click="reset"><i class="el-icon-refresh"></i> 重置</el-button>
     </div>
 
-    <el-table :data="tableData" stripe row-key="id"  default-expand-all>
-      <el-table-column prop="id" label="编号" width="100px"></el-table-column>
-      <el-table-column prop="name" label="名称" width="200px"></el-table-column>
-      <el-table-column prop="remark" label="备注" width="300px"></el-table-column>
-      <el-table-column prop="createtime" label="创建时间" ></el-table-column>
-      <el-table-column prop="updatetime" label="更新时间" ></el-table-column>
-      <el-table-column label="操作" width="500px">
+    <el-table :data="tableData" row-key="id"  default-expand-all
+              :header-cell-style="{
+              'background-color': '#f0f3ff',
+              'color': 'rgb(0,0,0)',
+              'border-top': '1px rgb(64, 158, 255) solid',
+              'border-bottom': '1px rgb(64, 158, 255) solid',
+               }">
+      <el-table-column prop="id" label="编号" width="80" align="center"></el-table-column>
+      <el-table-column prop="name" label="名称" align="center"></el-table-column>
+      <el-table-column prop="remark" label="备注" align="center"></el-table-column>
+      <el-table-column prop="createtime" label="创建时间" width="200" align="center"></el-table-column>
+      <el-table-column prop="updatetime" label="更新时间" width="200" align="center"></el-table-column>
+      <el-table-column label="操作" align="left">
         <template v-slot="scope">
-<!--          scope.row 就是当前行数据-->
           <el-button type="success" v-if="!scope.row.pid" @click="handleAdd(scope.row)">添加二级分类</el-button>
           <el-button type="primary" @click="$router.push('/categoryEdit?id=' + scope.row.id)">编辑</el-button>
           <el-popconfirm

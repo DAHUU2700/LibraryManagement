@@ -1,14 +1,32 @@
 <template>
-<!--  <div style="margin: 20px;width: 300px">-->
-    <div style="width: 80%">
-    <h2 style="margin-bottom: 30px">新增图书</h2>
+    <div>
+    <h2 style="margin:20px 0 30px 20px">新增图书</h2>
     <el-form :inline="true":rules="rules" ref="ruleForm" :model="form" label-width="100px">
       <el-form-item label="名称" prop="name">
         <el-input v-model="form.name" placeholder="请输入名称"></el-input>
       </el-form-item>
-      <el-form-item label="描述" prop="description">
-        <el-input style="width: 400px" type="textarea" v-model="form.description" placeholder="请输入描述"></el-input>
+
+      <el-form-item label="作者" prop="author">
+        <el-input v-model="form.author" placeholder="请输入作者"></el-input>
       </el-form-item>
+
+      <br/>
+      <el-form-item label="描述" prop="description" >
+        <el-input style="width: 400px " rows="8" type="textarea" v-model="form.description" placeholder="请输入描述"></el-input>
+      </el-form-item>
+
+      <el-form-item label="封面" prop="cover">
+        <el-upload
+            class="avatar-uploader"
+            :action="'http://localhost:9090/api/book/file/upload?token=' + this.admin.token"
+            :show-file-list="false"
+            :on-success="handleCoverSuccess"
+        >
+          <img v-if="form.cover" :src="form.cover" class="avatar">
+          <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+        </el-upload>
+      </el-form-item>
+      <br/>
       <el-form-item label="出版日期" prop="publishDate">
         <el-date-picker
             v-model="form.publishDate"
@@ -16,9 +34,6 @@
             value-format="yyyy-MM-dd"
             placeholder="请选择出版日期">
         </el-date-picker>
-      </el-form-item>
-      <el-form-item label="作者" prop="author">
-        <el-input v-model="form.author" placeholder="请输入作者"></el-input>
       </el-form-item>
       <el-form-item label="出版社" prop="publisher">
         <el-input v-model="form.publisher" placeholder="请输入出版社"></el-input>
@@ -30,6 +45,7 @@
             v-model="form.categories"
             :options="categories"></el-cascader>
       </el-form-item>
+      <br/>
       <el-form-item label="标准码" prop="bookNo">
         <el-input v-model="form.bookNo" placeholder="请输入标准码"></el-input>
       </el-form-item>
@@ -42,18 +58,7 @@
         <el-input v-model="form.nums" placeholder="请输入数量"></el-input>
       </el-form-item>
 
-      <br>
-      <el-form-item label="封面" prop="cover">
-        <el-upload
-            class="avatar-uploader"
-            :action="'http://localhost:9090/api/book/file/upload?token=' + this.admin.token"
-            :show-file-list="false"
-            :on-success="handleCoverSuccess"
-        >
-          <img v-if="form.cover" :src="form.cover" class="avatar">
-          <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-        </el-upload>
-      </el-form-item>
+
     </el-form>
 
     <div style="text-align: center; margin-top: 30px">
