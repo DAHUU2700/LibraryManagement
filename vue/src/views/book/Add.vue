@@ -12,7 +12,7 @@
 
       <br/>
       <el-form-item label="描述" prop="description" >
-        <el-input style="width: 400px " rows="8" type="textarea" v-model="form.description" placeholder="请输入描述"></el-input>
+        <el-input style="width: 300px " rows="8" type="textarea" v-model="form.description" placeholder="请输入描述"></el-input>
       </el-form-item>
 
       <el-form-item label="封面" prop="cover">
